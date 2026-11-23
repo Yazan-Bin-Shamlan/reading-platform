@@ -9,8 +9,8 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 | Phase | What | State |
 |---|---|---|
 | 0 | Foundation: Arabic/English + RTL, themes, fonts, data model, sign-in, app shell | ✅ done |
-| 1 | Upload, Library, Original (PDF) reader, resume position | next |
-| 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | |
+| 1 | Upload, Library, Original (PDF) reader, resume position | ✅ done |
+| 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | next |
 | 3 | Smart Reading Assist | |
 | 4 | My Words + flashcards + CSV/Anki export | |
 | 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | |
@@ -28,7 +28,7 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 
 ## Setup
 
-You need **Node 20.9+** (24 recommended) and a free **Supabase** project.
+You need **Node 20.9+** (24 recommended). For the real thing you need a free **Supabase** project; to try it out first, use [local mode](#local-mode-no-supabase-yet).
 
 ### 1. Install
 
@@ -64,6 +64,44 @@ npm run dev
 
 Open <http://localhost:3000>. The app works without Supabase keys too: you can browse the shell, and sign-in shows a "not configured" notice.
 
+## Local mode (no Supabase yet)
+
+Running `npm run dev` without Supabase keys switches the app into local mode:
+
+- a fixed local user (no sign-in)
+- a project-only PostgreSQL database
+- files stored in `.local/storage`
+
+Local mode never turns on in a production build. You need PostgreSQL 15+ installed (`initdb`, `pg_ctl` on your PATH). To set it up once:
+
+```bash
+initdb -D .local/pg -U postgres --auth=trust -E UTF8 --locale=C
+echo "port = 54329" >> .local/pg/postgresql.conf
+npm run local:db
+createdb -h localhost -p 54329 -U postgres qiraa
+```
+
+Then put the following in `.env.local`:
+
+```bash
+DATABASE_URL="postgresql://postgres@localhost:54329/qiraa"
+DIRECT_URL="postgresql://postgres@localhost:54329/qiraa"
+```
+
+Run `npm run db:migrate` and `npm run dev`. Use `npm run local:db` to start the database again after a restart, and `npm run local:db:stop` to stop it.
+
+When you add your Supabase keys to `.env.local` (replacing the two local URLs), the app switches to Supabase automatically. It creates the private `library` storage bucket on first upload.
+
+### Test PDFs
+
+`node scripts/make-test-pdfs.mjs` generates sample files into `.local/fixtures` using headless Chrome:
+
+- an English book with a table of contents
+- an 841-page book
+- an Arabic book
+- a two-column research paper
+- an image-only "scanned" PDF
+
 ## Environment variables
 
 Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*` values reach the browser.
@@ -73,6 +111,7 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Phase 0 | Supabase → Project Settings → API Keys |
 | `DATABASE_URL`, `DIRECT_URL` | Phase 0 | Supabase → Connect → ORMs → Prisma |
 | `NEXT_PUBLIC_AUTH_GOOGLE` | optional | `true` after enabling Google in Supabase |
+| `NEXT_PUBLIC_MAX_UPLOAD_MB` | optional | Upload size limit, default `50`. That's Supabase Free's per-file cap; raise it on Pro. |
 | `AI_PROVIDER` | Phase 3 | `gemini` |
 | `GEMINI_API_KEY` | Phase 3 | <https://aistudio.google.com/apikey> |
 | `OPENALEX_API_KEY` | Phase 5 | <https://openalex.org> → account → API key |
@@ -99,6 +138,7 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 | `npm run db:migrate` | Apply migrations (uses `DIRECT_URL`) |
 | `npm run db:migrate:dev` | Create a new migration after editing `prisma/schema.prisma` |
 | `npm run db:studio` | Browse the database |
+| `npm run local:db` / `local:db:stop` | Start / stop the local-mode database |
 
 ## Project layout
 
@@ -121,4 +161,6 @@ tests/                 Vitest tests
 - **Themes**: Light, Sepia, Dark and True Black. An inline `<head>` script applies the saved theme (a cookie) before first paint, so there's no flash and no hydration mismatch. The tokens are in `app/globals.css`.
 - **RTL**: `<html dir>` comes from the locale. Components use logical properties (`ms-`, `ps-`, `start-`) so layouts mirror automatically.
 - **Shared content**: files are stored once per SHA-256 (`Content`). Text extraction and Smart Assist results attach to the content, not the user, so a book is processed once no matter how many people read it. Each person's library, notes, progress and words are their own (`Document`, `Annotation` and so on).
+- **Uploads** go straight from the browser to storage through a one-time signed URL. That keeps them off Vercel's 4.5 MB request limit and gives a real progress bar. The browser first reads the PDF itself for the title, author, page count, table of contents, cover, language and type. The server then re-hashes the stored file before accepting it, so nobody can claim someone else's file by its hash.
+- **The reader** (Original mode) only renders the pages near the screen: a canvas plus pdf.js's text layer for selection. pdf.js fetches only the byte ranges it needs, so 500+ page books open quickly. The position is saved as you read and when the tab closes, then restored to the same spot.
 - **AI quota**: the Gemini free-tier quota belongs to one API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share.

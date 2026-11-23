@@ -1,7 +1,6 @@
-import { Upload } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { UploadButton } from "@/components/upload/upload-button";
 import { BrandMark } from "./brand-mark";
 import { LanguageSwitch } from "./language-switch";
 import { NavLinks } from "./nav-links";
@@ -18,10 +17,9 @@ export function SiteHeader({ account }: { account?: ReactNode }) {
           <NavLinks />
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" className="hidden sm:inline-flex" data-action="upload">
-            <Upload aria-hidden />
+          <UploadButton size="sm" className="hidden sm:inline-flex">
             {t("upload")}
-          </Button>
+          </UploadButton>
           <LanguageSwitch />
           <ThemeMenu />
           {account}

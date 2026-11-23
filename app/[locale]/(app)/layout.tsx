@@ -1,12 +1,18 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { AccountMenu } from "@/components/shell/account-menu";
 import { BottomTabs } from "@/components/shell/nav-links";
 import { SiteHeader } from "@/components/shell/site-header";
+import { UploadProvider } from "@/components/upload/upload-provider";
+import { getUser } from "@/lib/auth";
 
-export default function AppLayout({ children }: LayoutProps<"/[locale]">) {
-  const t = useTranslations("nav");
+// Every page here shows the signed-in person's own data: never prerender or cache it.
+export const dynamic = "force-dynamic";
+
+export default async function AppLayout({ children }: LayoutProps<"/[locale]">) {
+  const t = await getTranslations("nav");
+  const user = await getUser();
   return (
-    <>
+    <UploadProvider signedIn={Boolean(user)}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:shadow"
@@ -18,6 +24,6 @@ export default function AppLayout({ children }: LayoutProps<"/[locale]">) {
         {children}
       </main>
       <BottomTabs />
-    </>
+    </UploadProvider>
   );
 }

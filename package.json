@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && node scripts/copy-pdfjs-assets.mjs",
+    "local:db": "pg_ctl -D .local/pg -l .local/pg.log -o \"-c listen_addresses=localhost\" start",
+    "local:db:stop": "pg_ctl -D .local/pg stop"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
@@ -26,6 +28,7 @@
     "motion": "^14.14.0",
     "next": "16.4.6",
     "next-intl": "^4.15.3",
+    "pdfjs-dist": "^6.5.438",
     "pg": "^8.23.1",
     "radix-ui": "^1.8.1",
     "react": "19.3.0",

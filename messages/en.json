@@ -25,7 +25,25 @@
   "library": {
     "title": "Library",
     "emptyTitle": "Nothing here yet",
-    "emptyBody": "Books, papers and articles you add will appear here, with your progress."
+    "emptyBody": "Books, papers and articles you add will appear here, with your progress.",
+    "grid": "Grid",
+    "list": "List",
+    "sort": "Sort",
+    "sortOpened": "Recently opened",
+    "sortAdded": "Recently added",
+    "sortTitle": "Title",
+    "sortProgress": "Progress",
+    "noMatches": "Nothing matches these filters.",
+    "clearFilters": "Clear filters",
+    "pages": "{count, plural, one {# page} other {# pages}}",
+    "percentRead": "{percent}% read",
+    "notStarted": "Not started",
+    "finished": "Finished",
+    "remove": "Remove from library",
+    "removed": "Removed from your library",
+    "changeType": "Change type",
+    "options": "Options for {title}",
+    "count": "{count, plural, one {# item} other {# items}}"
   },
   "explore": {
     "title": "Explore",
@@ -79,5 +97,59 @@
   "notFound": {
     "title": "Page not found",
     "back": "Back home"
+  },
+  "upload": {
+    "dropTitle": "Drop to add to your library",
+    "dropBody": "PDF files up to {max} MB",
+    "panelTitle": "{count, plural, one {Adding # file} other {Adding # files}}",
+    "panelDone": "{count, plural, one {# file added} other {# files added}}",
+    "reading": "Reading…",
+    "uploading": "Uploading {percent}%",
+    "saving": "Adding to your library…",
+    "done": "Added",
+    "duplicate": "Already in your library",
+    "readNow": "Read now",
+    "retry": "Try again",
+    "dismiss": "Dismiss",
+    "close": "Close",
+    "scannedNote": "Scanned pages: Reading mode and Smart Assist will need OCR (coming later). Original mode works.",
+    "typeLabel": "Type",
+    "errors": {
+      "notPdf": "This isn't a PDF file.",
+      "tooLarge": "This file is larger than {max} MB.",
+      "encrypted": "This PDF is password-protected.",
+      "corrupt": "This PDF looks damaged and can't be opened.",
+      "network": "Connection lost. Check your internet and try again.",
+      "unauthorized": "Please sign in to upload.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "types": {
+    "book": "Book",
+    "paper": "Research paper",
+    "study": "Study",
+    "article": "Article",
+    "other": "Other",
+    "all": "All types"
+  },
+  "languages": {
+    "ar": "Arabic",
+    "en": "English",
+    "all": "All languages"
+  },
+  "reader": {
+    "back": "Back to library",
+    "contents": "Contents",
+    "noContents": "This document has no table of contents.",
+    "page": "Page",
+    "pageOf": "of {total}",
+    "goToPage": "Go to page",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitWidth": "Fit width",
+    "loading": "Opening…",
+    "loadError": "This document couldn't be opened.",
+    "retry": "Try again",
+    "resumed": "Resumed at page {page}"
   }
 }

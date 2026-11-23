@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { safeNext } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { ensureProfile, safeNext } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 // Email links and Google sign-in both land here with a one-time ?code=.
@@ -13,11 +12,7 @@ export async function GET(request: NextRequest) {
   if (code && supabase) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
-      await db.profile.upsert({
-        where: { id: data.user.id },
-        create: { id: data.user.id, displayName: data.user.user_metadata?.full_name ?? null },
-        update: {},
-      });
+      await ensureProfile(data.user.id, data.user.user_metadata?.full_name ?? null);
       return NextResponse.redirect(new URL(next, origin));
     }
   }

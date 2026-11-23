@@ -46,3 +46,9 @@ next-env.d.ts
 
 # local preview config
 /.claude/launch.json
+
+# local dev database + storage (npm run local:db)
+/.local/
+
+# pdf.js assets copied by postinstall
+/public/pdfjs/
