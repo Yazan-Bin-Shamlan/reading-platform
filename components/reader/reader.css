@@ -30,6 +30,22 @@
   text-decoration: underline dotted var(--hl-note) 2px;
   text-underline-offset: 0.2em;
 }
+/* Smart Assist marks: a soft dotted underline, a colour per type. */
+:root {
+  --as-word: oklch(0.55 0.1 200);
+  --as-person: oklch(0.62 0.13 60);
+  --as-other: oklch(0.55 0.12 300);
+}
+.dark,
+.black {
+  --as-word: oklch(0.75 0.09 200);
+  --as-person: oklch(0.8 0.12 75);
+  --as-other: oklch(0.75 0.1 300);
+}
+::highlight(as-word) { text-decoration: underline dotted var(--as-word) 2px; text-underline-offset: 0.22em; }
+::highlight(as-person) { text-decoration: underline dotted var(--as-person) 2px; text-underline-offset: 0.22em; }
+::highlight(as-other) { text-decoration: underline dotted var(--as-other) 2px; text-underline-offset: 0.22em; }
+
 ::highlight(search) { background-color: var(--hl-search); }
 ::highlight(search-current) { background-color: var(--hl-search-current); }
 

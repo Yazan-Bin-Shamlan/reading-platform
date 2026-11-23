@@ -17,6 +17,7 @@
     "local:db:stop": "pg_ctl -D .local/pg stop"
   },
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@supabase/ssr": "^0.12.7",

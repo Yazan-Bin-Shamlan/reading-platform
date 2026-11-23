@@ -261,6 +261,9 @@ model Entity {
   imageUrl      String?
   wikiUrlEn     String?
   wikiUrlAr     String?
+  /// First sentences of the Wikipedia article, when there is one.
+  extractEn     String?
+  extractAr     String?
   fetchedAt     DateTime @default(now())
 
   lookups EntityLookup[]

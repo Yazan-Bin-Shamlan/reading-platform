@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, NotebookPen, Trash2 } from "lucide-react";
+import { Check, Copy, NotebookPen, Sparkles, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function Floating({
   children: React.ReactNode;
 }) {
   const el = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const anchorRef = useRef(anchor);
   useLayoutEffect(() => {
     anchorRef.current = anchor;
@@ -42,21 +42,30 @@ export function Floating({
       const rect = anchorRef.current();
       const box = el.current;
       if (!rect || !box) return;
-      const { width, height } = box.getBoundingClientRect();
-      const roomAbove = rect.top - TOP_INSET - MARGIN >= height;
-      const roomBelow = window.innerHeight - rect.bottom - MARGIN >= height;
-      const below = (preferBelow && roomBelow) || !roomAbove;
-      const top = below ? rect.bottom + MARGIN : rect.top - height - MARGIN;
+      const { width } = box.getBoundingClientRect();
+      // Natural height, ignoring any cap applied last time.
+      const height = box.scrollHeight;
+      const spaceAbove = rect.top - TOP_INSET - MARGIN * 2;
+      const spaceBelow = window.innerHeight - rect.bottom - MARGIN * 2;
+      // Never cover the text itself: go where it fits (or where there's more room) and scroll inside if needed.
+      const below = preferBelow ? spaceBelow >= height || spaceBelow >= spaceAbove : spaceAbove < height && spaceBelow > spaceAbove;
+      const maxHeight = Math.max(120, below ? spaceBelow : spaceAbove);
+      const shown = Math.min(height, maxHeight);
+      const top = below ? rect.bottom + MARGIN : rect.top - shown - MARGIN;
       const left = Math.min(
         Math.max(MARGIN, rect.left + rect.width / 2 - width / 2),
         window.innerWidth - width - MARGIN,
       );
-      setPos({ top: Math.max(MARGIN, top), left });
+      setPos({ top: Math.max(MARGIN, top), left, maxHeight });
     };
     place();
+    // Content that loads in (a card's details) changes the size: place it again.
+    const ro = new ResizeObserver(place);
+    if (el.current?.firstElementChild) ro.observe(el.current.firstElementChild);
     window.addEventListener("scroll", place, { passive: true });
     window.addEventListener("resize", place);
     return () => {
+      ro.disconnect();
       window.removeEventListener("scroll", place);
       window.removeEventListener("resize", place);
     };
@@ -79,7 +88,7 @@ export function Floating({
       ref={el}
       role="toolbar"
       className={cn(
-        "fixed z-50 rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg transition-opacity duration-150",
+        "fixed z-50 overflow-y-auto overscroll-contain rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg transition-opacity duration-150",
         !pos && "opacity-0",
         className,
       )}
@@ -121,16 +130,28 @@ export function AnnotationActions({
   onNote,
   onCopy,
   onDelete,
+  onExplain,
 }: {
   current?: HighlightColor | null;
   onColor: (c: HighlightColor) => void;
   onNote: () => void;
   onCopy: () => void;
   onDelete?: () => void;
+  /** Smart Assist: explain the selected word or passage. */
+  onExplain?: () => void;
 }) {
   const t = useTranslations("notes");
   return (
     <div className="flex items-center gap-0.5">
+      {onExplain && (
+        <>
+          <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-2.5 text-brand" onClick={onExplain}>
+            <Sparkles aria-hidden />
+            {t("explain")}
+          </Button>
+          <div className="mx-0.5 h-6 w-px bg-border" />
+        </>
+      )}
       <div className="flex items-center gap-1 px-1.5">
         {highlightColors.map((c) => (
           <button

@@ -38,6 +38,8 @@ export type FinalizeInput = z.infer<typeof finalizeSchema>;
 export const updateDocumentSchema = z.object({
   title: z.string().trim().min(1).max(500).optional(),
   type: z.enum(itemTypes).optional(),
+  /** Off = this document's text is never sent to the AI provider. */
+  assistEnabled: z.boolean().optional(),
 });
 
 export const progressSchema = z.object({

@@ -7,6 +7,7 @@ const SHORTCUTS: [keys: string[], action: string][] = [
   [["←", "→"], "turnPage"],
   [["Space"], "scrollDown"],
   [["/"], "search"],
+  [["a"], "assist"],
   [["m"], "mode"],
   [["f"], "focus"],
   [["t"], "theme"],

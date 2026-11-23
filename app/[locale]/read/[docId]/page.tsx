@@ -2,6 +2,7 @@ import { BookX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { Reader } from "@/components/reader/reader";
+import { getProvider } from "@/lib/ai/provider";
 import { EmptyState } from "@/components/shell/empty-state";
 import { Button } from "@/components/ui/button";
 import { Link, redirect } from "@/i18n/navigation";
@@ -16,7 +17,11 @@ import { TEXT_VERSION } from "@/lib/text/extract";
 const loadDoc = cache(async (docId: string, userId: string) =>
   db.document.findFirst({
     where: { id: docId, userId },
-    include: { content: true, progress: true, user: { select: { preferences: true } } },
+    include: {
+      content: true,
+      progress: true,
+      user: { select: { preferences: true, englishLevel: true, assistEnabled: true, assistDensity: true, explainLang: true } },
+    },
   }),
 );
 
@@ -48,11 +53,19 @@ export default async function ReadPage({ params }: PageProps<"/[locale]/read/[do
     );
   }
 
-  const [fileUrl, annotations] = await Promise.all([
+  const [fileUrl, annotations, known, saved, provider] = await Promise.all([
     storage().readUrl(content.storageKey, 6 * 3600),
     listAnnotations(doc.id, user!.id),
+    db.knownWord.findMany({ where: { userId: user!.id }, select: { lang: true, lemma: true } }),
+    db.savedWord.findMany({ where: { userId: user!.id }, select: { lang: true, lemma: true } }),
+    getProvider(),
     db.document.update({ where: { id: doc.id }, data: { lastOpenedAt: new Date() } }),
   ]);
+  const byLang = (rows: { lang: "ar" | "en"; lemma: string }[]) => ({
+    ar: rows.filter((r) => r.lang === "ar").map((r) => r.lemma),
+    en: rows.filter((r) => r.lang === "en").map((r) => r.lemma),
+  });
+  const profile = doc.user;
   const extracted = content.textVersion >= TEXT_VERSION;
 
   return (
@@ -70,6 +83,18 @@ export default async function ReadPage({ params }: PageProps<"/[locale]/read/[do
       initial={doc.progress ? { page: doc.progress.pageIndex, offset: (doc.progress.charOffset ?? 0) / 1000 } : null}
       initialPrefs={readPrefs(doc.user.preferences)}
       initialAnnotations={annotations}
+      assist={{
+        settings: {
+          enabled: profile.assistEnabled,
+          level: profile.englishLevel,
+          density: profile.assistDensity,
+          explainLang: profile.explainLang,
+        },
+        docEnabled: doc.assistEnabled,
+        known: byLang(known),
+        saved: byLang(saved),
+        provider: provider?.name ?? null,
+      }}
     />
   );
 }

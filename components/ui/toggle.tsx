@@ -11,7 +11,9 @@ const toggleVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        outline: "border border-input bg-transparent hover:bg-muted",
+        // The chosen option gets the accent, so it reads clearly in every theme.
+        outline:
+          "border border-input bg-transparent hover:bg-muted data-[state=on]:border-brand/60 data-[state=on]:bg-brand/12 data-[state=on]:text-foreground",
       },
       size: {
         default:

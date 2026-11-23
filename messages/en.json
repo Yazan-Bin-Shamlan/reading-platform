@@ -188,7 +188,10 @@
     "leftInChapter": "{time} left in chapter",
     "leftInBook": "{time} left in book",
     "missingTitle": "This isn’t in your library",
-    "missingBody": "It may have been removed, or the link belongs to someone else’s library."
+    "missingBody": "It may have been removed, or the link belongs to someone else’s library.",
+    "assistPaused": "Smart Assist paused until tomorrow — reading still works.",
+    "assistLimit": "Today's Smart Assist allowance is used up — reading still works.",
+    "dismiss": "Dismiss"
   },
   "notes": {
     "title": "Notes",
@@ -231,7 +234,8 @@
     "exportedOn": "Notes exported on",
     "pageN": "Page {page}",
     "bookmark": "Bookmark",
-    "fileSuffix": "notes"
+    "fileSuffix": "notes",
+    "explain": "Explain"
   },
   "search": {
     "label": "Search in this document",
@@ -257,6 +261,78 @@
     "bookmark": "Bookmark this page",
     "size": "Text size or zoom",
     "close": "Close, clear selection",
-    "help": "This list"
+    "help": "This list",
+    "assist": "Smart Assist on/off"
+  },
+  "assist": {
+    "title": "Smart Assist",
+    "description": "Marks hard words and the people, places and ideas in the text. Hover or tap one to see what it means.",
+    "status": {
+      "unavailable": "Smart Assist isn't set up on this server yet (no GEMINI_API_KEY).",
+      "noText": "This document is scanned images, so there's no text for Smart Assist to read.",
+      "paused": "Smart Assist has used today's free quota. It's paused until tomorrow; reading still works.",
+      "limit": "You've used today's Smart Assist allowance. It resets tomorrow."
+    },
+    "level": "My English level",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "levelHints": {
+      "beginner": "Mark most new words",
+      "intermediate": "Mark harder words",
+      "advanced": "Only rare words"
+    },
+    "density": "How many marks",
+    "few": "Few",
+    "many": "Many",
+    "explainIn": "Explain in",
+    "explainLangs": {
+      "ar": "Arabic",
+      "en": "Easy English",
+      "both": "Both"
+    },
+    "thisDocument": "Use Smart Assist for this document",
+    "thisDocumentHint": "When off, its text is never sent to the AI.",
+    "levelPromptTitle": "How's your English?",
+    "levelPromptBody": "Smart Assist only marks words above your level. You can change this any time.",
+    "later": "Not now",
+    "turnedOn": "Smart Assist on",
+    "turnedOff": "Smart Assist off. Press A to turn it back on.",
+    "listen": "Listen",
+    "meaning": "Meaning",
+    "inThisSentence": "In this sentence",
+    "inEnglish": "In English",
+    "explainMore": "Explain more",
+    "save": "Save to my words",
+    "saved": "Saved",
+    "know": "I know this word",
+    "knowDone": "“{word}” won't be marked again.",
+    "undo": "Undo",
+    "savedToast": "“{word}” saved to My Words",
+    "saveFailed": "That word couldn't be saved. Please try again.",
+    "bc": "BC",
+    "whyMentioned": "Why it's mentioned here",
+    "readMore": "Read more on Wikipedia",
+    "inEnglishWikipedia": "English article",
+    "source": "Facts from Wikidata and Wikipedia.",
+    "notFound": {
+      "person": "We couldn't find a reliable match for this person on Wikipedia, so we won't guess who they are.",
+      "place": "We couldn't find a reliable match for this place on Wikipedia.",
+      "org": "We couldn't find a reliable match for this organisation on Wikipedia.",
+      "event": "We couldn't find a reliable match for this event on Wikipedia."
+    },
+    "paragraphTitle": "In simple words",
+    "demoNote": "Demo mode: these explanations are placeholders. Add GEMINI_API_KEY to .env.local for real ones.",
+    "problem": {
+      "paused": "Smart Assist is paused until tomorrow (today's free quota is used up). Reading still works.",
+      "limit": "You've used today's Smart Assist allowance. It resets tomorrow.",
+      "unavailable": "Smart Assist isn't set up yet.",
+      "off": "Smart Assist is off for this document.",
+      "empty": "Nothing to explain here.",
+      "busy": "Wikipedia is busy right now. Try again in a moment.",
+      "error": "That didn't work. Please try again."
+    }
   }
 }

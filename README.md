@@ -11,8 +11,8 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 | 0 | Foundation: Arabic/English + RTL, themes, fonts, data model, sign-in, app shell | ✅ done |
 | 1 | Upload, Library, Original (PDF) reader, resume position | ✅ done |
 | 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | ✅ done |
-| 3 | Smart Reading Assist | next |
-| 4 | My Words + flashcards + CSV/Anki export | |
+| 3 | Smart Reading Assist | ✅ done |
+| 4 | My Words + flashcards + CSV/Anki export | next |
 | 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | |
 | 6 | Daily sync, README completion, full test pass | |
 
@@ -112,8 +112,11 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 | `DATABASE_URL`, `DIRECT_URL` | Phase 0 | Supabase → Connect → ORMs → Prisma |
 | `NEXT_PUBLIC_AUTH_GOOGLE` | optional | `true` after enabling Google in Supabase |
 | `NEXT_PUBLIC_MAX_UPLOAD_MB` | optional | Upload size limit, default `50`. That's Supabase Free's per-file cap; raise it on Pro. |
-| `AI_PROVIDER` | Phase 3 | `gemini` |
+| `AI_PROVIDER` | Phase 3 | `gemini` (the default). Without a key in local development, a labelled demo provider stands in. |
 | `GEMINI_API_KEY` | Phase 3 | <https://aistudio.google.com/apikey> |
+| `GEMINI_MODEL_FAST`, `GEMINI_MODEL_SMART` | optional | Defaults `gemini-3.5-flash-lite` (marking pages, word lookups) and `gemini-3.8-flash` ("Explain more", passages): the stable free-tier models as of Nov 2026 |
+| `AI_DAILY_LIMIT_FAST`, `AI_DAILY_LIMIT_SMART`, `AI_USER_DAILY_LIMIT`, `AI_MIN_INTERVAL_MS` | optional | Caps on the shared free quota: requests per day per model (1000 / 200), per reader per day (300), and spacing between requests (4000 ms ≈ 15 a minute) |
+| `WIKIMEDIA_CONTACT` | recommended | Your email or site. Wikipedia/Wikidata ask for it in each request and allow 200 lookups a minute with it, 10 without |
 | `OPENALEX_API_KEY` | Phase 5 | <https://openalex.org> → account → API key |
 | `CORE_API_KEY` | Phase 6 | <https://core.ac.uk/services/api> |
 | `SEMANTIC_SCHOLAR_API_KEY` | optional | <https://www.semanticscholar.org/product/api#api-key> |
@@ -152,7 +155,9 @@ components/            ui/ (shadcn), shell/, auth/, providers/, upload/, library
 hooks/                 Client hooks (theme, page text, annotations, progress saving)
 i18n/                  Locale routing, navigation and message loading
 messages/              en.json, ar.json (UI text)
-lib/                   auth, db (Prisma), supabase/, storage/, pdf/, upload/, library/,
+lib/                   ai/ (provider interface, Gemini, demo, prompts, quota), assist/
+                       (placing and filtering marks), entities/ (Wikidata, Wikipedia),
+                       auth, db (Prisma), supabase/, storage/, pdf/, upload/, library/,
                        text/ (reflow, extraction, search), reader/ (layout, prefs,
                        annotations, export), preferences/, fonts, brand
 scripts/               pdf.js setup (postinstall), test PDF generator
@@ -173,4 +178,10 @@ tests/                 Vitest tests
 - **One position model**: everything (reading position, highlights, notes, search results) is a page plus a place on it, so both modes share them. Each character of the extracted text maps back to the PDF text layer's spans. That is how a highlight made in Reading mode shows up on the original page, and the reverse.
 - **Highlights** are drawn with the CSS Custom Highlight API, which adds no extra elements to the text. Notes export as Markdown from the Notes panel.
 - **Fonts**: `lib/fonts.ts` builds the Latin + Arabic stacks itself. next/font's metric fallback for a Latin font (e.g. "Geist Fallback", which is local Arial) has no `unicode-range`, so it would grab Arabic letters before the Arabic font loads.
-- **AI quota**: the Gemini free-tier quota belongs to one API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share.
+- **Smart Reading Assist**: when a page comes into view, the server asks the AI about it and the next three pages in the background, one request per page. Every result is cached per document page, so a page is never analysed twice for anyone.
+  - The model returns each word or name with its paragraph number and exact wording, not character offsets (models count characters badly). [`lib/assist/locate.ts`](lib/assist/locate.ts) finds the position, tolerating case and Arabic diacritics. The same position marks both the PDF and Reading mode.
+  - Every term carries its own difficulty (1–5, mapped to CEFR) plus explanations in English and Arabic. Your level, the density slider, "I know this word" and the explanation language then filter in the browser, so changing them is instant and uses no quota.
+  - Facts about people, places, organisations and events come from Wikidata and Wikipedia, cached for 30 days. The AI only says why they're mentioned. When no confident match exists (exact name, right kind), the card says so instead of guessing.
+  - All AI calls go through [`lib/ai/provider.ts`](lib/ai/provider.ts) (`analyzePage`, `explainTerm`, `explainMore`, `explainParagraph`), so another provider is one new file plus `AI_PROVIDER`.
+  - A per-document switch keeps a document's text away from the AI entirely.
+- **AI quota**: the Gemini free-tier quota belongs to the Google project behind the API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share. Requests are queued and spaced, per-minute limits (HTTP 429) are retried with backoff, and a daily-limit error pauses Smart Assist until midnight Pacific, when Google resets the quota. Marks already made stay, and the reader shows "Smart Assist paused until tomorrow — reading still works."

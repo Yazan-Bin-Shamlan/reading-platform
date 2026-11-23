@@ -11,6 +11,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +41,8 @@ import { chapterEnd, minutesLeft, WPM } from "@/lib/reader/time-left";
 import type { Hit } from "@/lib/text/search";
 import { cn } from "@/lib/utils";
 import { AnnotationActions, Floating, NoteEditor } from "./annotation-menu";
+import { AssistCard } from "./assist-card";
+import { AssistMenu, LevelPrompt } from "./assist-menu";
 import { NotesPanel } from "./notes-panel";
 import { PdfView } from "./pdf-view";
 import { ReaderSettings, ZOOMS } from "./reader-settings";
@@ -48,6 +51,7 @@ import { SearchPanel } from "./search-panel";
 import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TocPanel } from "./toc-panel";
 import type { Anchor, Position, ViewHandle } from "./types";
+import { useSmartAssist, type AssistInitial } from "./use-smart-assist";
 import "./reader.css";
 
 export type ReaderProps = {
@@ -64,6 +68,7 @@ export type ReaderProps = {
   initial: Anchor | null;
   initialPrefs: ReaderPrefs;
   initialAnnotations: Annotation[];
+  assist: AssistInitial;
 };
 
 type Panel = "toc" | "notes" | "search" | "help" | null;
@@ -116,6 +121,9 @@ export function Reader(props: ReaderProps) {
   const hasText = textStatus !== "scanned";
   const numPages = pageCount ?? 0;
   const view = useRef<ViewHandle>(null);
+  // Bumped when the views' on-screen text changes, so highlights and marks get redrawn.
+  const [paintTick, setPaintTick] = useState(0);
+  const onRendered = useCallback(() => setPaintTick((n) => n + 1), []);
 
   // ── Preferences (saved to the profile, a moment after the last change) ─
   const [prefs, setPrefsState] = useState(props.initialPrefs);
@@ -150,6 +158,12 @@ export function Reader(props: ReaderProps) {
     setCurrent(p.current);
   }, []);
   useProgressSaver(docId, position);
+
+  // ── Smart Reading Assist ───────────────────────────────────────────
+  const getView = useCallback(() => view.current, []);
+  const smart = useSmartAssist({ docId, getView, current, language, hasText, paintTick, initial: props.assist });
+  const [levelLater, setLevelLater] = useState(false);
+  const [pauseSeen, setPauseSeen] = useState(false);
 
   useEffect(() => {
     if (initial && initial.page > 0) {
@@ -360,7 +374,10 @@ export function Reader(props: ReaderProps) {
       }
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 350) {
         const hit = highlightAt(p.clientX, p.clientY);
+        const term = hit ? null : smart.termAt(p.clientX, p.clientY);
         if (hit) setMenu({ mode: "actions", annotation: hit });
+        else if (term) smart.openTerm(term.term, term.page);
+        else if (smart.card) smart.setCard(null);
         else setChrome((c) => !c);
       }
     };
@@ -370,17 +387,20 @@ export function Reader(props: ReaderProps) {
       window.removeEventListener("touchstart", onStart);
       window.removeEventListener("touchend", onEnd);
     };
-  }, [mode, zoom, docRtl, step, highlightAt]);
+  }, [mode, zoom, docRtl, step, highlightAt, smart]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!window.getSelection()?.isCollapsed) return;
       const hit = highlightAt(e.clientX, e.clientY);
-      if (hit) setMenu({ mode: "actions", annotation: hit });
+      if (hit) return setMenu({ mode: "actions", annotation: hit });
+      // A click on a mark pins its card open.
+      const term = smart.termAt(e.clientX, e.clientY);
+      if (term) smart.openTerm(term.term, term.page);
     };
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
-  }, [highlightAt]);
+  }, [highlightAt, smart]);
 
   // ── Search ─────────────────────────────────────────────────────────
   const [query, setQuery] = useState("");
@@ -396,8 +416,6 @@ export function Reader(props: ReaderProps) {
   }, []);
 
   // ── Painting highlights and search matches ─────────────────────────
-  const [paintTick, setPaintTick] = useState(0);
-  const onRendered = useCallback(() => setPaintTick((n) => n + 1), []);
   useEffect(() => {
     const v = view.current;
     if (!v) return;
@@ -515,8 +533,12 @@ export function Reader(props: ReaderProps) {
         case "?":
           setPanel("help");
           break;
+        case "a":
+          smart.toggle();
+          break;
         case "Escape":
-          if (sel) clearSelection();
+          if (smart.card) smart.setCard(null);
+          else if (sel) clearSelection();
           else if (focus) toggleFocus();
           else return;
           break;
@@ -527,7 +549,7 @@ export function Reader(props: ReaderProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [docRtl, step, toggleFocus, theme, setTheme, toggleBookmark, switchMode, mode, setPrefs, prefs.size, zoomBy, sel, focus]);
+  }, [docRtl, step, toggleFocus, theme, setTheme, toggleBookmark, switchMode, mode, setPrefs, prefs.size, zoomBy, sel, focus, smart]);
 
   // ── Time left ──────────────────────────────────────────────────────
   const wpm = language === "ar" ? WPM.ar : WPM.en;
@@ -589,6 +611,18 @@ export function Reader(props: ReaderProps) {
           >
             <Bookmark aria-hidden className={cn(bookmark && "fill-current text-brand")} />
           </IconButton>
+          {smart.available && (
+            <AssistMenu
+              settings={smart.settings}
+              onSettings={smart.setSettings}
+              docEnabled={smart.docEnabled}
+              onDocEnabled={smart.setDocEnabled}
+              status={hasText ? smart.status : "no-text"}
+              analyzing={smart.analyzing}
+              demo={smart.demo}
+              english={language !== "ar"}
+            />
+          )}
           <ModeSwitch mode={mode} hasText={hasText} onChange={switchMode} />
           <ReaderSettings mode={mode} prefs={prefs} onPrefs={setPrefs} zoom={zoom} onZoom={setZoom} />
         </div>
@@ -662,6 +696,15 @@ export function Reader(props: ReaderProps) {
           <AnnotationActions
             onColor={(c) => highlight(c)}
             onNote={() => highlight("yellow", true)}
+            onExplain={
+              smart.available && smart.docEnabled && hasText
+                ? () => {
+                    const range = sel.range;
+                    smart.explainSelection(range, quoteOf(range).quote, () => rectOf(range));
+                    clearSelection();
+                  }
+                : undefined
+            }
             onCopy={() => {
               copy(quoteOf(sel.range).quote);
               clearSelection();
@@ -705,6 +748,46 @@ export function Reader(props: ReaderProps) {
           )}
         </Floating>
       )}
+
+      {smart.card && (
+        <Floating
+          anchor={smart.card.anchor}
+          onDismiss={smart.card.pinned ? () => smart.setCard(null) : undefined}
+          className="p-0"
+        >
+          <div data-assist-card>
+            <AssistCard
+              key={JSON.stringify(smart.card.target).slice(0, 200)}
+              docId={docId}
+              target={smart.card.target}
+              explainLang={smart.settings.explainLang}
+              demo={smart.demo}
+              actions={smart.actions}
+            />
+          </div>
+        </Floating>
+      )}
+      <AnimatePresence>
+        {smart.active && smart.settings.level === null && language !== "ar" && !levelLater && smart.status === "ok" && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
+            <LevelPrompt onPick={(level) => smart.setSettings({ level })} onLater={() => setLevelLater(true)} />
+          </motion.div>
+        )}
+        {smart.active && (smart.status === "paused" || smart.status === "limit") && !pauseSeen && (
+          <motion.div
+            role="status"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed inset-x-3 bottom-14 z-30 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-full border bg-popover px-4 py-2 text-sm text-popover-foreground shadow-lg"
+          >
+            <span>{smart.status === "paused" ? t("assistPaused") : t("assistLimit")}</span>
+            <button type="button" onClick={() => setPauseSeen(true)} aria-label={t("dismiss")} className="text-muted-foreground hover:text-foreground">
+              <X aria-hidden className="size-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {panel === "search" && (
         <SearchPanel
