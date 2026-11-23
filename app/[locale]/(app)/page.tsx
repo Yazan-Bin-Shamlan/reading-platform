@@ -8,6 +8,7 @@ import { UploadButton } from "@/components/upload/upload-button";
 import { Link } from "@/i18n/navigation";
 import { getUser } from "@/lib/auth";
 import { listLibrary, type LibraryDoc } from "@/lib/library/queries";
+import { joinNames } from "@/lib/utils";
 
 export default async function HomePage() {
   const t = await getTranslations();
@@ -90,7 +91,7 @@ async function ContinueCard({ doc, label }: { doc: LibraryDoc; label: string }) 
         </p>
         {doc.authors[0] && (
           <p className="mt-1 truncate text-sm text-muted-foreground">
-            <bdi>{doc.authors.join("، ")}</bdi>
+            <bdi>{joinNames(doc.authors)}</bdi>
           </p>
         )}
         <div className="mt-4 max-w-sm">

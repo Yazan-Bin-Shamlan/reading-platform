@@ -32,10 +32,10 @@ export function gutendexUrl(q: SearchQuery) {
   });
   if (q.query) params.set("search", q.query);
   if (q.page > 1) params.set("page", String(q.page));
-  return `${BASE}?${params}`;
+  return `${BASE}/?${params}`;
 }
 
-export const gutendexBookUrl = (id: string) => `${BASE}/${encodeURIComponent(id)}`;
+export const gutendexBookUrl = (id: string) => `${BASE}/${encodeURIComponent(id)}/`;
 
 export function fromGutendex(b: GutendexBook): CatalogRecord | null {
   if (b.copyright !== false || b.media_type !== "Text") return null;

@@ -1,6 +1,9 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/** Cover image, or a calm typographic stand-in when a PDF has none. */
+/** Cover image, or a calm typographic stand-in when a PDF has none (or its source's image fails). */
 export function BookCover({
   title,
   coverUrl,
@@ -12,6 +15,12 @@ export function BookCover({
   className?: string;
   sizes?: "small" | "large";
 }) {
+  const [failed, setFailed] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  // An image that failed before hydration never fires onError.
+  useEffect(() => {
+    if (img.current?.complete && img.current.naturalWidth === 0) setFailed(true);
+  }, []);
   return (
     <div
       className={cn(
@@ -19,9 +28,9 @@ export function BookCover({
         className,
       )}
     >
-      {coverUrl ? (
+      {coverUrl && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element -- signed storage URL
-        <img src={coverUrl} alt="" loading="lazy" className="size-full object-cover object-top" />
+        <img ref={img} src={coverUrl} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover object-top" />
       ) : (
         <div className="flex size-full items-end bg-gradient-to-br from-secondary to-accent p-3">
           <p

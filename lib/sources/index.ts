@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { acoItemUrl, acoUrl, fromAco, type AcoDoc } from "./aco";
+import { fromIa, iaMetadataUrl, iaSearchUrl, type IaDoc, type IaMetadata } from "./archive";
+import { epmcItemUrl, epmcSearchUrl, fromEpmc, type EpmcSearch } from "./europepmc";
 import { fromGutendex, gutendexBookUrl, gutendexUrl, type GutendexBook } from "./gutenberg";
 import { cached, getJson } from "./http";
 import { fromOpenAlex, openAlexUrl, openAlexWorkUrl, type OpenAlexWork } from "./openalex";
@@ -10,12 +12,26 @@ import type { CatalogRecord, SearchQuery, SearchResult, SourceId } from "./types
 const SEARCH_TTL = 6 * 3600;
 const ITEM_TTL = 24 * 3600;
 const PER_PAGE = 20;
+// Europe PMC can take half a minute on common words. Explore stops waiting
+// sooner, but the answer still lands in the cache for the next try.
+const EPMC_TIMEOUT_MS = 45_000;
 const apiKey = () => process.env.OPENALEX_API_KEY || undefined;
 
 type Paged<T> = { count?: number; numFound?: number; next?: string | null; results?: T[]; docs?: T[]; meta?: { count: number } };
 
 const mapAll = <T,>(rows: T[] | undefined, map: (r: T) => CatalogRecord | null) =>
   (rows ?? []).map(map).filter((r): r is CatalogRecord => r !== null);
+
+/** Europe PMC pages by cursor: page n needs page n-1's cursor, so earlier pages are read (and cached) first. */
+async function epmcPage(q: SearchQuery): Promise<EpmcSearch> {
+  let cursor = "*";
+  for (let p = 1; ; p++) {
+    const url = epmcSearchUrl(q, cursor);
+    const body = await cached(`europepmc:${url}`, SEARCH_TTL, () => getJson<EpmcSearch>(url, EPMC_TIMEOUT_MS));
+    if (p >= q.page || !body.nextCursorMark || body.nextCursorMark === cursor) return p >= q.page ? body : {};
+    cursor = body.nextCursorMark;
+  }
+}
 
 /** Synced sources (DOAB, arXiv) are searched in our own catalog. */
 async function searchCatalog(source: SourceId, q: SearchQuery): Promise<SearchResult> {
@@ -88,6 +104,21 @@ export async function searchSource(source: SourceId, q: SearchQuery): Promise<Se
       const total = r.numFound ?? null;
       return { items: mapAll(r.docs, fromAco), total, more: total !== null && q.page * PER_PAGE < total };
     }
+    case "archive": {
+      if (q.type === "paper") return { items: [], total: 0, more: false };
+      const url = iaSearchUrl(q);
+      const body = await cached(`archive:${url}`, SEARCH_TTL, () => getJson<{ response?: Paged<IaDoc> }>(url));
+      const total = body.response?.numFound ?? null;
+      // Books list every language they use; keep those whose main one was asked for.
+      const items = mapAll(body.response?.docs, (d) => fromIa(d)).filter((r) => !q.language || r.language === q.language);
+      return { items, total, more: total !== null && q.page * PER_PAGE < total };
+    }
+    case "europepmc": {
+      if (q.type === "book" || q.language === "ar") return { items: [], total: 0, more: false };
+      const body = await epmcPage(q);
+      const total = body.hitCount ?? null;
+      return { items: mapAll(body.resultList?.result, fromEpmc), total, more: total !== null && q.page * PER_PAGE < total };
+    }
     case "doab":
       return q.type === "paper" ? { items: [], total: 0, more: false } : searchCatalog("doab", q);
     case "arxiv":
@@ -115,6 +146,18 @@ export async function getRecord(source: SourceId, sourceId: string): Promise<Cat
       const body = await cached(`aco:${url}`, ITEM_TTL, () => getJson<Paged<AcoDoc> & { response?: Paged<AcoDoc> }>(url));
       const doc = (body.response ?? body).docs?.find((d) => d.ss_identifier === sourceId);
       return doc ? fromAco(doc) : null;
+    }
+    case "archive": {
+      // The metadata API is the only one that lists the item's files (and so its PDF).
+      const url = iaMetadataUrl(sourceId);
+      const body = await cached(`archive:${url}`, ITEM_TTL, () => getJson<IaMetadata>(url));
+      return body.metadata && !body.is_dark ? fromIa(body.metadata, body.files ?? []) : null;
+    }
+    case "europepmc": {
+      const url = epmcItemUrl(sourceId);
+      const body = await cached(`europepmc:${url}`, ITEM_TTL, () => getJson<EpmcSearch>(url, EPMC_TIMEOUT_MS));
+      const hit = body.resultList?.result?.find((r) => r.pmcid === sourceId);
+      return hit ? fromEpmc(hit) : null;
     }
     default:
       return null; // synced sources are only what we've harvested

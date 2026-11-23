@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2, Search, X } from "lucide-react";
+import { ArrowUpRight, Loader2, Search, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,32 @@ export type ExploreFilters = { q: string; lang: "" | "ar" | "en"; type: "" | "bo
 
 type Page = { items: ExploreItem[]; status: SourceStatus[]; more: boolean };
 
+// The Hindawi Foundation's books aren't fetched or listed here (its terms
+// couldn't be confirmed to allow it), so people are pointed to its own site,
+// Safahat, where hindawi.org now redirects.
+const HINDAWI_URL = "https://www.safahat.org/books/";
+
+function HindawiCard() {
+  const t = useTranslations("explore.hindawi");
+  return (
+    <a
+      href={HINDAWI_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex max-w-2xl items-center gap-4 rounded-xl border bg-card p-4 transition-shadow hover:shadow-sm"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="font-serif text-lg font-semibold">{t("title")}</p>
+        <p className="text-sm text-muted-foreground">{t("body")}</p>
+      </div>
+      <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand group-hover:underline">
+        {t("action")}
+        <ArrowUpRight aria-hidden className="size-4 rtl:-scale-x-100" />
+      </span>
+    </a>
+  );
+}
+
 export function ExploreView({ filters, shelves }: { filters: ExploreFilters; shelves: { id: string; items: ExploreItem[] }[] }) {
   const t = useTranslations("explore");
   const router = useRouter();
@@ -22,6 +48,7 @@ export function ExploreView({ filters, shelves }: { filters: ExploreFilters; she
   const uiAr = useLocale() === "ar";
   const [draft, setDraft] = useState(filters.q);
   const searching = Boolean(filters.q || filters.lang || filters.type || filters.source);
+  const arabicBooks = filters.lang !== "en" && filters.type !== "paper" && !filters.source;
 
   const go = (next: Partial<ExploreFilters>) => {
     const f = { ...filters, ...next };
@@ -117,6 +144,7 @@ export function ExploreView({ filters, shelves }: { filters: ExploreFilters; she
             <Shelf key={s.id} title={t(`shelves.${s.id}`)} items={s.items} />
           ))}
           {shelves.length === 0 && <p className="text-muted-foreground">{t("shelvesUnavailable")}</p>}
+          <HindawiCard />
         </div>
       ) : results.isLoading ? (
         <div role="status" className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -133,7 +161,7 @@ export function ExploreView({ filters, shelves }: { filters: ExploreFilters; she
         <p className="text-muted-foreground">{t("error")}</p>
       ) : (
         <>
-          {down.length > 0 && <p className="text-sm text-muted-foreground">{t("sourcesDown", { sources: down.join("، ") })}</p>}
+          {down.length > 0 && <p className="text-sm text-muted-foreground">{t("sourcesDown", { sources: down.join(uiAr ? "، " : ", ") })}</p>}
           {items.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">{t("noResults")}</p>
           ) : (
@@ -149,6 +177,7 @@ export function ExploreView({ filters, shelves }: { filters: ExploreFilters; she
               {t("more")}
             </Button>
           )}
+          {arabicBooks && !results.hasNextPage && <HindawiCard />}
         </>
       )}
     </div>

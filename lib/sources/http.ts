@@ -20,6 +20,8 @@ const SPACING: Record<string, number> = {
   "api.openalex.org": 150,
   "sites.dlib.nyu.edu": 300,
   "mc.dlib.nyu.edu": 300,
+  "archive.org": 500,
+  "www.ebi.ac.uk": 200,
 };
 const DEFAULT_SPACING = 250;
 const MAX_RETRY_WAIT_MS = 30_000;
@@ -81,7 +83,7 @@ export async function sourceFetch(
   }
 }
 
-export const getJson = async <T>(url: string) => (await sourceFetch(url)).json() as Promise<T>;
+export const getJson = async <T>(url: string, timeoutMs?: number) => (await sourceFetch(url, { timeoutMs })).json() as Promise<T>;
 export const getText = async (url: string, accept = "application/xml") => (await sourceFetch(url, { accept })).text();
 
 /** A source response cached in the database for `ttlSeconds`, so repeated queries don't hit the source. */

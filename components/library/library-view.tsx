@@ -27,7 +27,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { LibraryDoc } from "@/lib/library/queries";
 import { itemTypes, type ItemType } from "@/lib/library/schemas";
-import { cn } from "@/lib/utils";
+import { cn, joinNames } from "@/lib/utils";
 import { BookCover } from "./book-cover";
 import { ReadingProgress } from "./progress-label";
 import { patchDocument } from "./type-select";
@@ -163,7 +163,7 @@ export function LibraryView({ docs }: { docs: LibraryDoc[] }) {
                 </p>
                 {d.authors[0] && (
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    <bdi>{d.authors.join("، ")}</bdi>
+                    <bdi>{joinNames(d.authors)}</bdi>
                   </p>
                 )}
                 <div className="mt-2">
@@ -187,7 +187,7 @@ export function LibraryView({ docs }: { docs: LibraryDoc[] }) {
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {tt(d.type)}
                     {d.pageCount ? ` · ${t("pages", { count: d.pageCount })}` : ""}
-                    {d.authors[0] ? ` · ${d.authors.join("، ")}` : ""}
+                    {d.authors[0] ? ` · ${joinNames(d.authors)}` : ""}
                   </p>
                   <div className="mt-2 max-w-xs">
                     <ReadingProgress percent={d.percent} />

@@ -1,6 +1,6 @@
 import type { ItemType } from "@/lib/library/schemas";
 
-export const sourceIds = ["gutenberg", "doab", "openalex", "arxiv", "aco"] as const;
+export const sourceIds = ["gutenberg", "doab", "openalex", "arxiv", "aco", "archive", "europepmc"] as const;
 export type SourceId = (typeof sourceIds)[number];
 
 /**
@@ -22,7 +22,7 @@ export type CatalogRecord = {
   coverUrl: string | null;
   /** A PDF we may fetch, cache and show. */
   pdfUrl: string | null;
-  /** An HTML edition (Project Gutenberg) shown in Reading mode. */
+  /** A text edition shown in Reading mode: Project Gutenberg's HTML, Europe PMC's full text XML. */
   htmlUrl: string | null;
   /** A license code from lib/sources/license.ts. */
   license: string;

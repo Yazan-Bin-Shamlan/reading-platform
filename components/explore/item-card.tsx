@@ -4,7 +4,7 @@ import { BookCover } from "@/components/library/book-cover";
 import { Link } from "@/i18n/navigation";
 import { licenseLabel } from "@/lib/sources/license";
 import type { CatalogRecord } from "@/lib/sources/types";
-import { cn } from "@/lib/utils";
+import { cn, joinNames } from "@/lib/utils";
 
 export type ExploreItem = CatalogRecord & { docId?: string | null };
 
@@ -27,7 +27,7 @@ export function SourceLine({ item, className }: { item: CatalogRecord; className
 
 export function ItemCard({ item, layout = "grid" }: { item: ExploreItem; layout?: "grid" | "shelf" }) {
   const t = useTranslations("explore");
-  const meta = [item.authors.slice(0, 2).join("، "), item.year].filter(Boolean).join(" · ");
+  const meta = [joinNames(item.authors.slice(0, 2)), item.year].filter(Boolean).join(" · ");
   return (
     <Link
       href={itemHref(item)}

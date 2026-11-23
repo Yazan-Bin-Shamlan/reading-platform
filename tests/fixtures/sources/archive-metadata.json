@@ -1,0 +1,52 @@
+{
+ "metadata": {
+  "identifier": "arabicenglishvoc00cameuoft",
+  "title": "An Arabic-English vocabulary for the use of English students of modern Egyptian Arabic",
+  "creator": "Cameron, Donald Andreas, 1856-",
+  "language": [
+   "eng",
+   "ara"
+  ],
+  "date": "1892",
+  "subject": [
+   "Arabic language",
+   "Arabic language"
+  ],
+  "description": "26",
+  "contributor": "Robarts - University of Toronto",
+  "collection": [
+   "robarts",
+   "toronto",
+   "university_of_toronto"
+  ],
+  "possible-copyright-status": "NOT_IN_COPYRIGHT",
+  "mediatype": "texts"
+ },
+ "files": [
+  {
+   "name": "__ia_thumb.jpg",
+   "format": "Item Tile",
+   "size": "10311"
+  },
+  {
+   "name": "arabicenglishvoc00cameuoft.djvu",
+   "format": "DjVu",
+   "size": "11745867"
+  },
+  {
+   "name": "arabicenglishvoc00cameuoft.pdf",
+   "format": "Text PDF",
+   "size": "21027335"
+  },
+  {
+   "name": "arabicenglishvoc00cameuoft_bw.pdf",
+   "format": "Grayscale PDF",
+   "size": "18767010"
+  },
+  {
+   "name": "arabicenglishvoc00cameuoft_djvu.txt",
+   "format": "DjVuTXT",
+   "size": "767259"
+  }
+ ]
+}

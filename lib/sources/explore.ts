@@ -14,13 +14,12 @@ export type SourceStatus = { source: SourceId; ok: boolean };
 export function sourcesFor(q: Pick<ExploreQuery, "language" | "type" | "sources">): SourceId[] {
   const all: SourceId[] =
     q.language === "ar"
-      ? ["aco", "openalex", "gutenberg", "doab"]
+      ? ["aco", "archive", "openalex", "gutenberg", "doab"]
       : q.language === "en"
-        ? ["gutenberg", "openalex", "doab", "arxiv"]
-        : ["aco", "gutenberg", "openalex", "doab", "arxiv"];
-  const byType = all.filter((s) =>
-    q.type === "paper" ? s === "openalex" || s === "arxiv" : q.type === "book" ? s !== "arxiv" : true,
-  );
+        ? ["gutenberg", "openalex", "europepmc", "archive", "doab", "arxiv"]
+        : ["aco", "gutenberg", "openalex", "archive", "europepmc", "doab", "arxiv"];
+  const papers: SourceId[] = ["openalex", "arxiv", "europepmc"];
+  const byType = all.filter((s) => (q.type === "paper" ? papers.includes(s) : q.type === "book" ? !papers.includes(s) || s === "openalex" : true));
   return q.sources?.length ? byType.filter((s) => q.sources!.includes(s)) : byType;
 }
 
@@ -69,7 +68,9 @@ export async function shelves(): Promise<Shelf[]> {
   const rows: [string, () => Promise<CatalogRecord[]>][] = [
     ["arabicClassics", () => live("arabic-classics", { source: "aco", query: "ديوان", page: 1 })],
     ["classicNovels", () => live("classic-novels", { source: "gutenberg", query: "", page: 1, language: "en" })],
+    ["arabicOldPrints", () => live("arabic-old-prints", { source: "archive", query: "", page: 1, language: "ar" })],
     ["papersMonth", monthPapers],
+    ["openScience", () => live("open-science", { source: "europepmc", query: "", page: 1 })],
     ["arabicResearch", () => live("arabic-research", { source: "openalex", query: "", page: 1, language: "ar", type: "paper" })],
     ["newBooks", () => recent("doab")],
     ["arxivNew", () => recent("arxiv")],

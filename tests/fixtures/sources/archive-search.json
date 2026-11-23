@@ -1,0 +1,95 @@
+{
+ "response": {
+  "numFound": 1047,
+  "start": 0,
+  "docs": [
+   {
+    "collection": [
+     "europeanlibraries"
+    ],
+    "contributor": "Oxford University",
+    "creator": "Catafago, Joseph",
+    "date": "1858-01-01T00:00:00Z",
+    "description": [
+     "Book digitized by Google from the library of Oxford University and uploaded to the Internet Archive by user tpb.",
+     "2 volumes (xii, 1060 pages) ; 22 cm",
+     "Pt. 1. Arabic and English -- pt. 2. English and Arabic"
+    ],
+    "identifier": "anenglishandara02catagoog",
+    "language": [
+     "eng",
+     "ara"
+    ],
+    "possible-copyright-status": "NOT_IN_COPYRIGHT",
+    "subject": [
+     "ghayr",
+     "hikol",
+     "min",
+     "going",
+     "jjj",
+     "people",
+     "jju",
+     "hild",
+     "three",
+     "cos",
+     "min ghayr",
+     "public domain",
+     "jij hikol",
+     "google book",
+     "mtn ghayr",
+     "book search",
+     "wajhin ghayr",
+     "uniform sound",
+     "toll paid",
+     "ten days",
+     "Arabic language -- Dictionaries -- English",
+     "English language -- Dictionaries -- Arabic",
+     "Arabic language",
+     "English language"
+    ],
+    "title": "An English and Arabic dictionary : in two parts, Arabic and English, and English and Arabic, in which the Arabic words are represented in the oriental character, as well as their correct pronunciation and accentuation shewn in English letters",
+    "year": 1858
+   },
+   {
+    "collection": [
+     "robarts",
+     "toronto",
+     "university_of_toronto"
+    ],
+    "contributor": "Robarts - University of Toronto",
+    "creator": "Ab al-Ksim ibn Sadrah",
+    "date": "1910-01-01T00:00:00Z",
+    "description": "26",
+    "identifier": "dictionnairefran00abaluoft",
+    "language": [
+     "ara",
+     "fre"
+    ],
+    "possible-copyright-status": "NOT_IN_COPYRIGHT",
+    "subject": "Arabic language",
+    "title": "Dictionnaire français-arabe de la langue parlé en Algérie",
+    "year": 1910
+   },
+   {
+    "collection": [
+     "robarts",
+     "toronto",
+     "university_of_toronto"
+    ],
+    "contributor": "Robarts - University of Toronto",
+    "creator": "Cameron, Donald Andreas, 1856-",
+    "date": "1892-01-01T00:00:00Z",
+    "description": "26",
+    "identifier": "arabicenglishvoc00cameuoft",
+    "language": [
+     "eng",
+     "ara"
+    ],
+    "possible-copyright-status": "NOT_IN_COPYRIGHT",
+    "subject": "Arabic language",
+    "title": "An Arabic-English vocabulary for the use of English students of modern Egyptian Arabic",
+    "year": 1892
+   }
+  ]
+ }
+}

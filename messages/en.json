@@ -68,7 +68,9 @@
       "doab": "DOAB",
       "openalex": "OpenAlex",
       "arxiv": "arXiv",
-      "aco": "Arabic Collections Online"
+      "aco": "Arabic Collections Online",
+      "archive": "Internet Archive",
+      "europepmc": "Europe PMC"
     },
     "shelves": {
       "arabicClassics": "Arabic classics",
@@ -76,7 +78,9 @@
       "papersMonth": "Popular papers this month",
       "arabicResearch": "Arabic research",
       "newBooks": "New open-access books",
-      "arxivNew": "New on arXiv, openly licensed"
+      "arxivNew": "New on arXiv, openly licensed",
+      "arabicOldPrints": "Early Arabic prints",
+      "openScience": "New in open science"
     },
     "shelvesUnavailable": "The open libraries aren't responding right now. Try searching, or come back in a little while.",
     "searching": "Searching…",
@@ -115,7 +119,13 @@
     "license": "License",
     "notFoundTitle": "Couldn't find this item",
     "notFoundBody": "It may have been removed from its source, or the source isn't responding right now.",
-    "publicDomain": "Public domain"
+    "publicDomain": "Public domain",
+    "fullTextNote": "Opens in Reading mode, from Europe PMC's full text (figures and tables stay on its site).",
+    "hindawi": {
+      "title": "Hindawi Foundation",
+      "body": "Thousands of modern Arabic books, free to read on Safahat, the foundation's own site.",
+      "action": "Visit Hindawi"
+    }
   },
   "words": {
     "title": "My Words",

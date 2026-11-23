@@ -19,14 +19,14 @@ const SOURCES = {
     prefix: "xoai",
     // DOAB wants full timestamps for `from`.
     stamp: (d: Date) => d.toISOString().replace(/\.\d+Z$/, "Z"),
-    firstDays: Number(process.env.SYNC_DOAB_FIRST_DAYS ?? 60),
+    firstDays: Number(process.env.SYNC_DOAB_FIRST_DAYS) || 60,
     map: (id: string, meta: unknown) => fromDoab(meta, doabHandle(id)),
   },
   arxiv: {
     base: ARXIV_OAI,
     prefix: "arXiv",
     stamp: (d: Date) => d.toISOString().slice(0, 10),
-    firstDays: Number(process.env.SYNC_ARXIV_FIRST_DAYS ?? 7),
+    firstDays: Number(process.env.SYNC_ARXIV_FIRST_DAYS) || 7,
     map: (_id: string, meta: unknown) => fromArxiv(meta),
   },
 } as const;

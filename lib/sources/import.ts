@@ -5,6 +5,7 @@ import { MAX_UPLOAD_BYTES } from "@/lib/limits";
 import { keys, storage } from "@/lib/storage";
 import { extractLater, inspectPdf, TEXT_VERSION } from "@/lib/text/extract";
 import { htmlToPages } from "@/lib/text/html";
+import { jatsToHtml } from "@/lib/text/jats";
 import { sourceFetch, SourceError } from "./http";
 import { getRecord, saveRecord } from "./index";
 import { normalizeLicense } from "./license";
@@ -55,6 +56,10 @@ const fetchFile = async (url: string, accept: string) => {
   }
 };
 
+// ACO's books are page scans with no text layer; the Internet Archive's Arabic
+// books have one, but its OCR is unreadable.
+const isScan = (r: CatalogRecord) => r.source === "aco" || (r.source === "archive" && r.language === "ar");
+
 /** Marks content read straight from its source through /api/proxy, never stored (see remoteUrl). */
 export const REMOTE = "remote:";
 export const remoteUrl = (storageKey: string) => (storageKey.startsWith(REMOTE) ? storageKey.slice(REMOTE.length) : null);
@@ -66,7 +71,7 @@ export const remoteUrl = (storageKey: string) => (storageKey.startsWith(REMOTE) 
 async function linkRemotePdf(r: CatalogRecord, size: number): Promise<string> {
   const id = sha256(`${REMOTE}${r.pdfUrl}`);
   if (await db.content.findUnique({ where: { id }, select: { id: true } })) return id;
-  const scanned = r.source === "aco";
+  const scanned = isScan(r);
   await db.content.create({
     data: {
       id,
@@ -114,8 +119,7 @@ async function ingestPdf(r: CatalogRecord): Promise<string> {
   const storageKey = keys.content(id);
   await store.write(storageKey, bytes, "application/pdf");
   const info = await inspectPdf(bytes).catch(() => ({ pageCount: null, toc: [] }));
-  // ACO's books are page scans with no text layer.
-  const scanned = r.source === "aco";
+  const scanned = isScan(r);
   await db.content.create({
     data: {
       id,
@@ -133,13 +137,15 @@ async function ingestPdf(r: CatalogRecord): Promise<string> {
   return id;
 }
 
-/** An HTML book (Project Gutenberg), turned straight into text pages for Reading mode. */
+/** A text edition (Gutenberg's HTML, Europe PMC's XML), turned straight into text pages for Reading mode. */
 async function ingestHtml(r: CatalogRecord): Promise<string> {
-  const bytes = await readCapped(await fetchFile(r.htmlUrl!, "text/html"), MAX_HTML_BYTES);
+  const jats = r.source === "europepmc";
+  const bytes = await readCapped(await fetchFile(r.htmlUrl!, jats ? "application/xml" : "text/html"), MAX_HTML_BYTES);
   const id = sha256(bytes);
   if (await db.content.findUnique({ where: { id }, select: { id: true } })) return id;
 
-  const { pages, toc } = htmlToPages(new TextDecoder().decode(bytes));
+  const text = new TextDecoder().decode(bytes);
+  const { pages, toc } = htmlToPages(jats ? jatsToHtml(text) : text);
   if (!pages.length) throw new ImportError("no-file");
   await db.content.create({
     data: {

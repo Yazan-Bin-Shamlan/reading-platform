@@ -12,6 +12,7 @@ import { getRecord, saveRecord } from "@/lib/sources";
 import { ARXIV_THANKS } from "@/lib/sources/arxiv";
 import { licenseLabel } from "@/lib/sources/license";
 import { sourceIds, type SourceId } from "@/lib/sources/types";
+import { joinNames } from "@/lib/utils";
 
 const load = cache(async (source: string, parts: string[]) => {
   if (!(sourceIds as readonly string[]).includes(source)) return null;
@@ -71,7 +72,7 @@ export default async function ExploreItemPage({ params }: PageProps<"/[locale]/e
           )}
           {record.authors.length > 0 && (
             <p dir="auto" className="text-lg">
-              {record.authors.join("، ")}
+              {joinNames(record.authors)}
             </p>
           )}
           <div className="pt-2">
@@ -84,8 +85,12 @@ export default async function ExploreItemPage({ params }: PageProps<"/[locale]/e
               signedIn={Boolean(user)}
             />
           </div>
-          {record.source === "aco" && <p className="text-sm text-muted-foreground">{t("scannedNote")}</p>}
+          {/* The Internet Archive's Arabic text layers are unreadable OCR, so those are scans too. */}
+          {(record.source === "aco" || (record.source === "archive" && record.language === "ar")) && (
+            <p className="text-sm text-muted-foreground">{t("scannedNote")}</p>
+          )}
           {record.source === "gutenberg" && <p className="text-sm text-muted-foreground">{t("textOnlyNote")}</p>}
+          {record.source === "europepmc" && <p className="text-sm text-muted-foreground">{t("fullTextNote")}</p>}
           {!readable && <p className="text-sm text-muted-foreground">{t("linkOutNote")}</p>}
         </div>
       </div>

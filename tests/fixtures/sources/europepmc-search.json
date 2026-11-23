@@ -1,0 +1,133 @@
+{
+ "version": "6.9",
+ "hitCount": 113915,
+ "nextCursorMark": "AoIIQSltVCg1MjEzOTE4MA==",
+ "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=sleep+memory+AND+OPEN_ACCESS%3AY+AND+IN_PMC%3AY+AND+%28LICENSE%3A%22cc+by%22+OR+LICENSE%3A%22cc+by-sa%22+OR+LICENSE%3A%22cc+by-nd%22+OR+LICENSE%3A%22cc+by-nc%22+OR+LICENSE%3A%22cc+by-nc-sa%22+OR+LICENSE%3A%22cc+by-nc-nd%22+OR+LICENSE%3A%22cc0%22%29&cursorMark=AoIIQSltVCg1MjEzOTE4MA%3D%3D&resultType=core&pageSize=2&format=json",
+ "request": {
+  "queryString": "sleep memory AND OPEN_ACCESS:Y AND IN_PMC:Y AND (LICENSE:\"cc by\" OR LICENSE:\"cc by-sa\" OR LICENSE:\"cc by-nd\" OR LICENSE:\"cc by-nc\" OR LICENSE:\"cc by-nc-sa\" OR LICENSE:\"cc by-nc-nd\" OR LICENSE:\"cc0\")",
+  "resultType": "core",
+  "cursorMark": "*",
+  "pageSize": 2,
+  "sort": "",
+  "synonym": false
+ },
+ "resultList": {
+  "result": [
+   {
+    "id": "42148257",
+    "source": "MED",
+    "pmid": "42148257",
+    "pmcid": "PMC13173424",
+    "doi": "10.1093/sleepadvances/zpag041",
+    "title": "Festschrift in honor of Dr. Robert Stickgold, pioneer in sleep, memory, and dream research.",
+    "authorString": "Cunningham TJ, Wamsley EJ, Payne JD.",
+    "authorList": {
+     "author": [
+      {
+       "fullName": "Cunningham TJ",
+       "lastName": "Cunningham",
+       "firstName": "Tony J",
+       "initials": "TJ"
+      },
+      {
+       "fullName": "Wamsley EJ",
+       "lastName": "Wamsley",
+       "firstName": "Erin J",
+       "initials": "EJ"
+      },
+      {
+       "fullName": "Payne JD",
+       "lastName": "Payne",
+       "firstName": "Jessica D",
+       "initials": "JD"
+      }
+     ]
+    },
+    "journalInfo": {
+     "issue": "2",
+     "volume": "7",
+     "journalIssueId": 4185987,
+     "dateOfPublication": "2026 ",
+     "monthOfPublication": 0,
+     "yearOfPublication": 2026,
+     "journal": {
+      "medlineAbbreviation": "Sleep Adv",
+      "title": "Sleep advances : a journal of the Sleep Research Society",
+      "essn": "2632-5012",
+      "issn": "2632-5012",
+      "nlmid": "101774029",
+      "isoabbreviation": "Sleep Adv"
+     },
+     "printPublicationDate": "2026-01-01"
+    },
+    "pubYear": "2026",
+    "pageInfo": "zpag041",
+    "publicationStatus": "epublish",
+    "language": "eng",
+    "isOpenAccess": "Y",
+    "inEPMC": "Y",
+    "inPMC": "Y",
+    "hasReferences": "Y",
+    "hasPDF": "Y",
+    "hasBook": "N",
+    "hasSuppl": "N",
+    "hasData": "N",
+    "license": "cc by",
+    "authMan": "N",
+    "epmcAuthMan": "N",
+    "nihAuthMan": "N"
+   },
+   {
+    "id": "39735204",
+    "source": "MED",
+    "pmid": "39735204",
+    "pmcid": "PMC11674428",
+    "doi": "10.1016/j.nbas.2024.100127",
+    "title": "Sleep-memory relationships during brain aging.",
+    "authorString": "Kumar D.",
+    "authorList": {
+     "author": [
+      {
+       "fullName": "Kumar D",
+       "lastName": "Kumar",
+       "firstName": "Deependra",
+       "initials": "D"
+      }
+     ]
+    },
+    "journalInfo": {
+     "volume": "6",
+     "journalIssueId": 3803872,
+     "dateOfPublication": "2024 ",
+     "monthOfPublication": 0,
+     "yearOfPublication": 2024,
+     "journal": {
+      "medlineAbbreviation": "Aging Brain",
+      "title": "Aging brain",
+      "essn": "2589-9589",
+      "issn": "2589-9589",
+      "nlmid": "101776137",
+      "isoabbreviation": "Aging Brain"
+     },
+     "printPublicationDate": "2024-01-01"
+    },
+    "pubYear": "2024",
+    "pageInfo": "100127",
+    "publicationStatus": "epublish",
+    "language": "eng",
+    "isOpenAccess": "Y",
+    "inEPMC": "Y",
+    "inPMC": "Y",
+    "hasReferences": "Y",
+    "hasPDF": "Y",
+    "hasBook": "N",
+    "hasSuppl": "N",
+    "hasData": "N",
+    "license": "cc by-nc-nd",
+    "authMan": "N",
+    "epmcAuthMan": "N",
+    "nihAuthMan": "N"
+   }
+  ]
+ }
+}
