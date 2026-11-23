@@ -126,16 +126,22 @@ model SyncState {
 // processed once no matter how many people read it.
 
 model Content {
-  id         String     @id // sha256 of the file bytes
-  format     DocFormat
-  storageKey String
-  byteSize   Int
-  pageCount  Int?
-  language   Lang?
-  direction  String? // rtl | ltr | mixed
-  textStatus TextStatus @default(pending)
-  toc        Json?
-  createdAt  DateTime   @default(now())
+  id          String     @id // sha256 of the file bytes
+  format      DocFormat
+  storageKey  String
+  byteSize    Int
+  pageCount   Int?
+  language    Lang?
+  direction   String? // rtl | ltr | mixed
+  textStatus  TextStatus @default(pending)
+  toc         Json?
+  /// Version of the text extractor that produced `pages`; 0 = not extracted yet.
+  textVersion Int        @default(0)
+  /// Set while an extraction runs, so two requests don't extract at once.
+  extractLock DateTime?
+  /// Words per page, for "minutes left". Filled when extraction finishes.
+  pageWords   Int[]
+  createdAt   DateTime   @default(now())
 
   pages       ContentPage[]
   documents   Document[]
@@ -148,6 +154,10 @@ model ContentPage {
   text      String
   /// Paragraph blocks as character ranges into `text`: [{ s, e, k }].
   blocks    Json
+  /// Maps `text` back to pdf.js text items, so the Original view can place
+  /// highlights on its text layer: [[textStart, item, itemStart, length]].
+  map       Json
+  words     Int     @default(0)
   content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@id([contentId, pageIndex])
@@ -206,6 +216,8 @@ model Annotation {
   color      String?
   pageIndex  Int
   start      Int?
+  /// Highlights can run onto later pages: `end` is an offset in `endPage` (null = same page).
+  endPage    Int?
   end        Int?
   quote      String?
   prefix     String?

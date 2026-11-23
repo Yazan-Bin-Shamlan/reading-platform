@@ -4,6 +4,16 @@ import { ArrowDownUp, Check, LayoutGrid, List, MoreHorizontal, Trash2 } from "lu
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -214,6 +224,7 @@ function DocMenu({ doc, className }: { doc: LibraryDoc; className?: string }) {
   const tt = useTranslations("types");
   const tu = useTranslations("upload");
   const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
 
   const act = async (fn: () => Promise<unknown>, done?: string) => {
     try {
@@ -226,39 +237,57 @@ function DocMenu({ doc, className }: { doc: LibraryDoc; className?: string }) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label={t("options", { title: doc.title })}
-          className={cn("opacity-90 shadow-sm md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100", className)}
-        >
-          <MoreHorizontal aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuLabel>{t("changeType")}</DropdownMenuLabel>
-        {itemTypes.map((ty) => (
-          <DropdownMenuItem key={ty} onSelect={() => act(() => patchDocument(doc.id, { type: ty }))}>
-            <span className="flex-1">{tt(ty)}</span>
-            {doc.type === ty && <Check aria-hidden className="text-brand" />}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            aria-label={t("options", { title: doc.title })}
+            className={cn("opacity-90 shadow-sm md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100", className)}
+          >
+            <MoreHorizontal aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-48">
+          <DropdownMenuLabel>{t("changeType")}</DropdownMenuLabel>
+          {itemTypes.map((ty) => (
+            <DropdownMenuItem key={ty} onSelect={() => act(() => patchDocument(doc.id, { type: ty }))}>
+              <span className="flex-1">{tt(ty)}</span>
+              {doc.type === ty && <Check aria-hidden className="text-brand" />}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onSelect={() => setConfirming(true)}>
+            <Trash2 aria-hidden />
+            {t("remove")}
           </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onSelect={() =>
-            act(async () => {
-              const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
-              if (!res.ok) throw new Error();
-            }, t("removed"))
-          }
-        >
-          <Trash2 aria-hidden />
-          {t("remove")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("removeTitle", { title: doc.title })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {doc.annotations > 0 ? t("removeBodyNotes", { count: doc.annotations }) : t("removeBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() =>
+                act(async () => {
+                  const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
+                  if (!res.ok) throw new Error();
+                }, t("removed"))
+              }
+            >
+              {t("removeConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

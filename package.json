@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate && node scripts/copy-pdfjs-assets.mjs",
+    "postinstall": "prisma generate && node scripts/setup-pdfjs.mjs",
     "local:db": "pg_ctl -D .local/pg -l .local/pg.log -o \"-c listen_addresses=localhost\" start",
     "local:db:stop": "pg_ctl -D .local/pg stop"
   },

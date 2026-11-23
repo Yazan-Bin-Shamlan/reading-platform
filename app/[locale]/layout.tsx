@@ -4,7 +4,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppProviders } from "@/components/providers/app-providers";
 import { brand } from "@/lib/brand";
-import { fontVariables } from "@/lib/fonts";
+import { fontStacks, fontVariables } from "@/lib/fonts";
 import { themeScript } from "@/lib/preferences/themes";
 import { localeDir, routing } from "@/i18n/routing";
 import "../globals.css";
@@ -34,7 +34,13 @@ export default async function LocaleLayout({
   const dir = localeDir(locale);
 
   return (
-    <html lang={locale} dir={dir} className={`${fontVariables} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={dir}
+      className={`${fontVariables} h-full antialiased`}
+      style={fontStacks}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

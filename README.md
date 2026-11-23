@@ -10,8 +10,8 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 |---|---|---|
 | 0 | Foundation: Arabic/English + RTL, themes, fonts, data model, sign-in, app shell | ✅ done |
 | 1 | Upload, Library, Original (PDF) reader, resume position | ✅ done |
-| 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | next |
-| 3 | Smart Reading Assist | |
+| 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | ✅ done |
+| 3 | Smart Reading Assist | next |
 | 4 | My Words + flashcards + CSV/Anki export | |
 | 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | |
 | 6 | Daily sync, README completion, full test pass | |
@@ -125,7 +125,7 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 2. Add the same environment variables in **Vercel → Settings → Environment Variables**.
 3. Add your production callback URL to Supabase (see step 2.4 above).
 
-`postinstall` runs `prisma generate` on every deploy. Run `npm run db:migrate` locally against production whenever the schema changes.
+`postinstall` runs `prisma generate` and `scripts/setup-pdfjs.mjs` (see [Design notes](#design-notes)) on every deploy. Run `npm run db:migrate` locally against production whenever the schema changes.
 
 ## Scripts
 
@@ -145,12 +145,17 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 ```
 app/[locale]/(app)/    Home, Library, Explore, My Words, Settings (with header + tabs)
 app/[locale]/(auth)/   Sign-in
-app/api/               Route handlers (auth callback; later upload, proxy, assist, sync)
-components/            ui/ (shadcn), shell/, auth/, providers/
-hooks/                 Client hooks (theme)
+app/api/               Route handlers: auth callback, uploads, documents (text pages,
+                       annotations, progress), preferences, local storage
+components/            ui/ (shadcn), shell/, auth/, providers/, upload/, library/,
+                       reader/ (shell, Original and Reading views, panels)
+hooks/                 Client hooks (theme, page text, annotations, progress saving)
 i18n/                  Locale routing, navigation and message loading
 messages/              en.json, ar.json (UI text)
-lib/                   auth, db (Prisma), supabase/, preferences/, fonts, brand
+lib/                   auth, db (Prisma), supabase/, storage/, pdf/, upload/, library/,
+                       text/ (reflow, extraction, search), reader/ (layout, prefs,
+                       annotations, export), preferences/, fonts, brand
+scripts/               pdf.js setup (postinstall), test PDF generator
 prisma/                schema.prisma + migrations
 proxy.ts               Session refresh + locale routing + page protection
 tests/                 Vitest tests
@@ -163,4 +168,9 @@ tests/                 Vitest tests
 - **Shared content**: files are stored once per SHA-256 (`Content`). Text extraction and Smart Assist results attach to the content, not the user, so a book is processed once no matter how many people read it. Each person's library, notes, progress and words are their own (`Document`, `Annotation` and so on).
 - **Uploads** go straight from the browser to storage through a one-time signed URL. That keeps them off Vercel's 4.5 MB request limit and gives a real progress bar. The browser first reads the PDF itself for the title, author, page count, table of contents, cover, language and type. The server then re-hashes the stored file before accepting it, so nobody can claim someone else's file by its hash.
 - **The reader** (Original mode) only renders the pages near the screen: a canvas plus pdf.js's text layer for selection. pdf.js fetches only the byte ranges it needs, so 500+ page books open quickly. The position is saved as you read and when the tab closes, then restored to the same spot.
+- **Reading mode** shows the PDF's text reflowed: your font, size, spacing, line length, margins and alignment. The server extracts each document once, right after upload, in the background (pdf.js in Node, about 2 s per 1,000 pages) and stores it per page (`ContentPage`). [`lib/text/reflow.ts`](lib/text/reflow.ts) rebuilds reading order from the PDF's positioned fragments. It joins lines into paragraphs, follows two-column layouts and spots headings. It drops page numbers and running headers, re-joins hyphenated words, and for Arabic puts split-off diacritics back on their letters and orders mixed Arabic/English lines. Scanned PDFs have no text, so they open in Original mode only (OCR comes later).
+- **pdf.js patch**: pdf.js reverses Arabic lam-alef ligatures when extracting text ("الأميرة" came out "األميرة"). `scripts/setup-pdfjs.mjs` patches that one line in both the server build and the browser worker, and fails loudly if a pdf.js upgrade moves the code.
+- **One position model**: everything (reading position, highlights, notes, search results) is a page plus a place on it, so both modes share them. Each character of the extracted text maps back to the PDF text layer's spans. That is how a highlight made in Reading mode shows up on the original page, and the reverse.
+- **Highlights** are drawn with the CSS Custom Highlight API, which adds no extra elements to the text. Notes export as Markdown from the Notes panel.
+- **Fonts**: `lib/fonts.ts` builds the Latin + Arabic stacks itself. next/font's metric fallback for a Latin font (e.g. "Geist Fallback", which is local Arial) has no `unicode-range`, so it would grab Arabic letters before the Arabic font loads.
 - **AI quota**: the Gemini free-tier quota belongs to one API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share.

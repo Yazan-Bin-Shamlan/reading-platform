@@ -4,6 +4,10 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { finalizeSchema } from "@/lib/library/schemas";
 import { keys, storage } from "@/lib/storage";
+import { extractLater, TEXT_VERSION } from "@/lib/text/extract";
+
+// Text extraction starts right after the response (see extractLater).
+export const maxDuration = 300;
 
 const MAX_COVER_BYTES = 1024 * 1024;
 
@@ -52,6 +56,9 @@ export async function POST(req: NextRequest) {
       },
     });
   }
+
+  // Prepare Reading mode's text in the background, so it's ready when they open it.
+  if (content.textVersion < TEXT_VERSION) extractLater(content.id);
 
   const cover = form?.get("cover");
   let coverKey: string | null = null;

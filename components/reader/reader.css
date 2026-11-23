@@ -1,0 +1,74 @@
+/* Highlight colours, drawn with ::highlight() over both views (lib/reader/paint.ts). */
+:root {
+  --hl-yellow: rgb(250 204 21 / 0.38);
+  --hl-green: rgb(74 222 128 / 0.32);
+  --hl-blue: rgb(96 165 250 / 0.3);
+  --hl-pink: rgb(244 114 182 / 0.3);
+  --hl-purple: rgb(167 139 250 / 0.32);
+  --hl-note: rgb(120 90 20 / 0.7);
+  --hl-search: rgb(251 146 60 / 0.32);
+  --hl-search-current: rgb(249 115 22 / 0.65);
+}
+.dark,
+.black {
+  --hl-yellow: rgb(250 204 21 / 0.3);
+  --hl-green: rgb(74 222 128 / 0.26);
+  --hl-blue: rgb(96 165 250 / 0.3);
+  --hl-pink: rgb(244 114 182 / 0.28);
+  --hl-purple: rgb(167 139 250 / 0.32);
+  --hl-note: rgb(250 220 120 / 0.75);
+  --hl-search: rgb(251 146 60 / 0.3);
+  --hl-search-current: rgb(251 146 60 / 0.6);
+}
+
+::highlight(hl-yellow) { background-color: var(--hl-yellow); }
+::highlight(hl-green) { background-color: var(--hl-green); }
+::highlight(hl-blue) { background-color: var(--hl-blue); }
+::highlight(hl-pink) { background-color: var(--hl-pink); }
+::highlight(hl-purple) { background-color: var(--hl-purple); }
+::highlight(hl-note) {
+  text-decoration: underline dotted var(--hl-note) 2px;
+  text-underline-offset: 0.2em;
+}
+::highlight(search) { background-color: var(--hl-search); }
+::highlight(search-current) { background-color: var(--hl-search-current); }
+
+/* Reading mode typography. Sizes are in em of the reader's chosen text size. */
+.reflow {
+  color: var(--foreground);
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+
+  p {
+    margin: 0 0 0.85em;
+    text-wrap: pretty;
+  }
+  h2 {
+    margin: 1.7em 0 0.75em;
+    font-size: 1.28em;
+    font-weight: 600;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+  > :first-child {
+    margin-top: 0;
+  }
+  ::selection {
+    background-color: color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+}
+.reflow-justify p {
+  text-align: justify;
+  hyphens: auto;
+}
+.reflow .reflow-empty {
+  margin: 2.5em 0;
+  font-size: 0.8em;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.reflow-loading {
+  margin-bottom: 1.6em;
+}

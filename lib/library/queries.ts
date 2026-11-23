@@ -15,6 +15,8 @@ export type LibraryDoc = {
   currentPage: number | null;
   createdAt: string;
   lastOpenedAt: string | null;
+  /** Highlights, notes and bookmarks: removing the document deletes them. */
+  annotations: number;
 };
 
 export async function listLibrary(userId: string, take?: number): Promise<LibraryDoc[]> {
@@ -22,7 +24,11 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     where: { userId },
     orderBy: [{ lastOpenedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
     take,
-    include: { progress: true, content: { select: { pageCount: true } } },
+    include: {
+      progress: true,
+      content: { select: { pageCount: true } },
+      _count: { select: { annotations: true } },
+    },
   });
 
   const coverKeys = docs.map((d) => d.coverKey).filter((k): k is string => Boolean(k));
@@ -40,5 +46,6 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     currentPage: d.progress ? d.progress.pageIndex + 1 : null,
     createdAt: d.createdAt.toISOString(),
     lastOpenedAt: d.lastOpenedAt?.toISOString() ?? null,
+    annotations: d._count.annotations,
   }));
 }

@@ -36,3 +36,24 @@ export const naskh = Noto_Naskh_Arabic({
 export const fontVariables = [uiLatin, uiArabic, mono, literata, sourceSerif, naskh]
   .map((f) => f.variable)
   .join(" ");
+
+type Font = { style: { fontFamily: string } };
+
+/**
+ * A font stack for mixed Latin and Arabic text. Each next/font family comes
+ * with a metric-matched fallback face (e.g. "Geist Fallback" = local Arial)
+ * that has no unicode-range, so `var(--font-ui), var(--font-ui-ar)` would let
+ * Arial catch Arabic letters before IBM Plex Sans Arabic ever loads. Listing
+ * every real face first and the fallbacks after fixes that.
+ */
+function stack(fonts: Font[], generic: string) {
+  const lists = fonts.map((f) => f.style.fontFamily.split(",").map((s) => s.trim()));
+  return [...lists.map((l) => l[0]), ...lists.flatMap((l) => l.slice(1)), generic].join(", ");
+}
+
+/** Set on <html>; app/globals.css and the reader refer to them. */
+export const fontStacks = {
+  "--stack-ui": stack([uiLatin, uiArabic], "ui-sans-serif, system-ui, sans-serif"),
+  "--stack-serif": stack([literata, naskh], "Georgia, serif"),
+  "--stack-classic": stack([sourceSerif, naskh], "Georgia, serif"),
+} as React.CSSProperties;

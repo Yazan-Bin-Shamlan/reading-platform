@@ -8,12 +8,12 @@ let loading: Promise<PdfJs> | null = null;
 /** Loads pdf.js on demand (browser only) with the worker served from our origin. */
 export function loadPdfjs(): Promise<PdfJs> {
   return (loading ??= import("pdfjs-dist").then((pdfjs) => {
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.mjs";
     return pdfjs;
   }));
 }
 
-/** Asset locations copied by scripts/copy-pdfjs-assets.mjs. */
+/** Asset locations copied by scripts/setup-pdfjs.mjs. */
 const assets = {
   cMapUrl: "/pdfjs/cmaps/",
   cMapPacked: true,

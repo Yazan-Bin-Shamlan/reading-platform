@@ -19,10 +19,22 @@ type Props = {
   height: number;
   label: string;
   onSize: (index: number, width: number, height: number) => void;
+  /** The text layer's spans (one per pdf.js text item), or null when it goes away. */
+  onTextLayer: (index: number, spans: HTMLElement[] | null) => void;
 };
 
 /** One page: a canvas for the picture and pdf.js's invisible text layer on top for selection. */
-export const PdfPage = memo(function PdfPage({ pdf, index, scale, top, width, height, label, onSize }: Props) {
+export const PdfPage = memo(function PdfPage({
+  pdf,
+  index,
+  scale,
+  top,
+  width,
+  height,
+  label,
+  onSize,
+  onTextLayer,
+}: Props) {
   const canvasHost = useRef<HTMLDivElement>(null);
   const textHost = useRef<HTMLDivElement>(null);
   const pageRef = useRef<PDFPageProxy | null>(null);
@@ -74,15 +86,21 @@ export const PdfPage = memo(function PdfPage({ pdf, index, scale, top, width, he
         container: host,
         viewport,
       });
-      await textLayer.render().catch(() => {});
+      try {
+        await textLayer.render();
+      } catch {
+        return;
+      }
+      if (!cancelled) onTextLayer(index, textLayer.textDivs);
     })();
 
     return () => {
       cancelled = true;
       renderTask?.cancel();
       textLayer?.cancel();
+      onTextLayer(index, null);
     };
-  }, [pdf, index, scale, onSize]);
+  }, [pdf, index, scale, onSize, onTextLayer]);
 
   // Free the page's memory when it scrolls far away and unmounts.
   useEffect(() => () => void pageRef.current?.cleanup(), []);
