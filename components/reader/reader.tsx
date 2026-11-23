@@ -58,7 +58,9 @@ export type ReaderProps = {
   docId: string;
   title: string;
   authors: string[];
-  fileUrl: string;
+  /** The PDF; null for books that are text only (Project Gutenberg's HTML editions). */
+  fileUrl: string | null;
+  fileSize?: number | null;
   pageCount: number | null;
   toc: TocEntry[];
   direction: "rtl" | "ltr" | "mixed" | null;
@@ -147,7 +149,7 @@ export function Reader(props: ReaderProps) {
       }).catch(() => {});
     }, 800);
   }, []);
-  const mode = hasText ? prefs.mode : "original";
+  const mode = !fileUrl ? "reading" : hasText ? prefs.mode : "original";
   const [zoom, setZoom] = useState(1);
 
   // ── Position ───────────────────────────────────────────────────────
@@ -185,11 +187,11 @@ export function Reader(props: ReaderProps) {
 
   const switchMode = useCallback(
     (next: ReaderPrefs["mode"]) => {
-      if (next === mode || (next === "reading" && !hasText)) return;
+      if (next === mode || (next === "reading" && !hasText) || (next === "original" && !fileUrl)) return;
       setStartAt(latest.current);
       setPrefs({ mode: next });
     },
-    [mode, hasText, setPrefs],
+    [mode, hasText, fileUrl, setPrefs],
   );
 
   // ── Toolbar visibility and focus mode ──────────────────────────────
@@ -634,7 +636,7 @@ export function Reader(props: ReaderProps) {
               english={language !== "ar"}
             />
           )}
-          <ModeSwitch mode={mode} hasText={hasText} onChange={switchMode} />
+          {fileUrl && <ModeSwitch mode={mode} hasText={hasText} onChange={switchMode} />}
           <ReaderSettings mode={mode} prefs={prefs} onPrefs={setPrefs} zoom={zoom} onZoom={setZoom} />
         </div>
         {mode === "reading" && textStatus === "garbled" && (
@@ -665,7 +667,8 @@ export function Reader(props: ReaderProps) {
           key="original"
           ref={view}
           docId={docId}
-          fileUrl={fileUrl}
+          fileUrl={fileUrl!}
+          fileSize={props.fileSize}
           pageCount={pageCount}
           zoom={zoom}
           hasText={hasText}

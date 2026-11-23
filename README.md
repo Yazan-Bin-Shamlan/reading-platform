@@ -13,8 +13,8 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 | 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | ✅ done |
 | 3 | Smart Reading Assist | ✅ done |
 | 4 | My Words + flashcards + CSV/Anki export | ✅ done |
-| 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | next |
-| 6 | Daily sync, README completion, full test pass | |
+| 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | ✅ done |
+| 6 | More sources (Internet Archive, CORE, Europe PMC, Semantic Scholar, Arab Journals, Hindawi link-outs), full test pass | next |
 
 ## Tech stack
 
@@ -116,11 +116,12 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 | `GEMINI_API_KEY` | Phase 3 | <https://aistudio.google.com/apikey> |
 | `GEMINI_MODEL_FAST`, `GEMINI_MODEL_SMART` | optional | Defaults `gemini-3.5-flash-lite` (marking pages, word lookups) and `gemini-3.8-flash` ("Explain more", passages): the stable free-tier models as of Nov 2026 |
 | `AI_DAILY_LIMIT_FAST`, `AI_DAILY_LIMIT_SMART`, `AI_USER_DAILY_LIMIT`, `AI_MIN_INTERVAL_MS` | optional | Caps on the shared free quota: requests per day per model (1000 / 200), per reader per day (300), and spacing between requests (4000 ms ≈ 15 a minute) |
-| `WIKIMEDIA_CONTACT` | recommended | Your email or site. Wikipedia/Wikidata ask for it in each request and allow 200 lookups a minute with it, 10 without |
-| `OPENALEX_API_KEY` | Phase 5 | <https://openalex.org> → account → API key |
+| `APP_CONTACT` | recommended | Your email or site, sent in the User-Agent to Wikipedia/Wikidata and the Explore sources as their policies ask. Wikimedia allows 200 lookups a minute with it, 10 without |
+| `OPENALEX_API_KEY` | optional | <https://openalex.org> → account → API key. Search works without one; a free key raises the daily budget |
 | `CORE_API_KEY` | Phase 6 | <https://core.ac.uk/services/api> |
 | `SEMANTIC_SCHOLAR_API_KEY` | optional | <https://www.semanticscholar.org/product/api#api-key> |
-| `CRON_SECRET` | Phase 5 | any long random string |
+| `CRON_SECRET` | Phase 5 | Any long random string. Vercel Cron sends it to `/api/cron/sync` (daily DOAB + arXiv sync, see `vercel.json`) |
+| `SYNC_DOAB_FIRST_DAYS`, `SYNC_ARXIV_FIRST_DAYS` | optional | How far back the first sync reaches (defaults 60 and 7 days). Later runs only fetch what changed |
 
 ## Deploying to Vercel
 
@@ -186,4 +187,13 @@ tests/                 Vitest tests
   - All AI calls go through [`lib/ai/provider.ts`](lib/ai/provider.ts) (`analyzePage`, `explainTerm`, `explainMore`, `explainParagraph`), so another provider is one new file plus `AI_PROVIDER`.
   - A per-document switch keeps a document's text away from the AI entirely.
 - **My Words** keeps each saved word with its translation, meaning and the sentence it came from. A link opens the book at that exact spot and flashes the word. Flashcards use a small SM-2 (the scheduling behind Anki): a word you know comes back after longer and longer gaps, one you forget comes back in ten minutes. Export as CSV (with a byte-order mark so Excel shows Arabic correctly) or as a file for Anki's **File → Import** (Basic notes, HTML, deck "Qiraa: My Words").
+- **Explore** (`lib/sources/`): one adapter per source, all returning the same record shape. Only public-domain or Creative Commons items get through (`lib/sources/license.ts`), and each one shows its license and attribution.
+  - **Searched live**, with responses cached for 6 hours: Project Gutenberg (via Gutendex), OpenAlex and Arabic Collections Online.
+  - **Harvested daily** through their open OAI-PMH feeds: DOAB (its search API only admits registered addresses) and arXiv. arXiv's search API doesn't carry licenses, and arXiv's terms only allow re-serving papers whose license permits it, so we keep the CC/CC0 ones.
+  - **Run the first sync locally**: `curl localhost:3000/api/cron/sync` (repeat to continue a long first harvest).
+  - **Files are fetched only when someone opens an item**, through the server, and cached once per file. Project Gutenberg books open in Reading mode from their HTML edition. Scans (ACO) open in Original mode.
+  - **Limits**:
+    - Files over 50 MB are read range by range through `/api/proxy` when the source supports ranges. ACO's large scans can't be read that way (pdf.js must read the whole file), so they link to ACO's viewer.
+    - The OAPEN Library, which hosts most DOAB PDFs, blocks servers with an anti-bot check, so those books open on DOAB/OAPEN.
+    - Requests to each source are spaced (arXiv: one every 3 seconds) and back off on 429/503.
 - **AI quota**: the Gemini free-tier quota belongs to the Google project behind the API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share. Requests are queued and spaced. Per-minute limits (HTTP 429) and a busy model (503, which the free tier returns at peak times) are retried with backoff, and longer explanations fall back to the fast model when the stronger one is overloaded. A daily-limit error pauses Smart Assist until midnight Pacific, when Google resets the quota. Marks already made stay, and the reader shows "Smart Assist paused until tomorrow — reading still works."

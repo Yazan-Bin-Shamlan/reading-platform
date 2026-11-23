@@ -27,6 +27,7 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     include: {
       progress: true,
       content: { select: { pageCount: true } },
+      catalogItem: { select: { coverUrl: true } },
       _count: { select: { annotations: true } },
     },
   });
@@ -41,7 +42,8 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     type: d.type,
     language: d.language,
     pageCount: d.content?.pageCount ?? null,
-    coverUrl: d.coverKey ? (covers[d.coverKey] ?? null) : null,
+    // Books from Explore use their source's cover.
+    coverUrl: d.coverKey ? (covers[d.coverKey] ?? null) : (d.catalogItem?.coverUrl ?? null),
     percent: d.progress?.percent ?? 0,
     currentPage: d.progress ? d.progress.pageIndex + 1 : null,
     createdAt: d.createdAt.toISOString(),

@@ -7,7 +7,7 @@ import { firstSentences, MIN_SCORE, scoreCandidate, toInfo, type EntityInfo, typ
 // client counts as unidentified and gets 10 requests a minute instead of 200.
 // https://foundation.wikimedia.org/wiki/Policy:User-Agent_policy
 // https://www.mediawiki.org/wiki/Wikimedia_APIs/Rate_limits
-const USER_AGENT = `QiraaReader/0.1 (${process.env.WIKIMEDIA_CONTACT || "contact not set"}) node-fetch`;
+const USER_AGENT = `QiraaReader/0.1 (${process.env.APP_CONTACT || "contact not set"}) node-fetch`;
 const MAX_CONCURRENT = 3;
 const CACHE_DAYS = 30;
 

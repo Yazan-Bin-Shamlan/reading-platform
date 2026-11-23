@@ -18,6 +18,8 @@ const MAX_FIT_WIDTH = 880;
 
 type Props = ViewProps & {
   fileUrl: string;
+  /** Size in bytes, needed for books read through the proxy. */
+  fileSize?: number | null;
   pageCount: number | null;
   zoom: number;
   /** Whether the document has text to map (not a scan). */
@@ -25,7 +27,18 @@ type Props = ViewProps & {
 };
 
 /** The Original view: the PDF's own pages, drawn only near the screen. */
-export const PdfView = memo(function PdfView({ docId, fileUrl, pageCount, zoom, hasText, initial, ref, onPosition, onRendered }: Props) {
+export const PdfView = memo(function PdfView({
+  docId,
+  fileUrl,
+  fileSize,
+  pageCount,
+  zoom,
+  hasText,
+  initial,
+  ref,
+  onPosition,
+  onRendered,
+}: Props) {
   const t = useTranslations("reader");
 
   // ── Load the document ──────────────────────────────────────────────
@@ -37,21 +50,28 @@ export const PdfView = memo(function PdfView({ docId, fileUrl, pageCount, zoom, 
   useEffect(() => {
     let alive = true;
     let loaded: PDFDocumentProxy | null = null;
-    openPdf({ url: fileUrl })
-      .then(async (doc) => {
-        loaded = doc;
-        const first = await doc.getPage(1);
-        const v = first.getViewport({ scale: 1 });
-        if (!alive) return;
-        setBase({ w: v.width, h: v.height });
-        setPdf(doc);
-      })
-      .catch(() => alive && setFailed(true));
+    // Start on the next tick: an effect that's set up and torn down at once
+    // (React's development double-run) then never downloads. Two parallel
+    // downloads of one large file make the browser cache fail one of them.
+    const start = setTimeout(() => {
+      openPdf({ url: fileUrl, length: fileSize, wholeFile: !hasText })
+        .then(async (doc) => {
+          loaded = doc;
+          if (!alive) return void doc.loadingTask.destroy();
+          const first = await doc.getPage(1);
+          const v = first.getViewport({ scale: 1 });
+          if (!alive) return;
+          setBase({ w: v.width, h: v.height });
+          setPdf(doc);
+        })
+        .catch(() => alive && setFailed(true));
+    });
     return () => {
       alive = false;
+      clearTimeout(start);
       void loaded?.loadingTask.destroy();
     };
-  }, [fileUrl, attempt]);
+  }, [fileUrl, fileSize, hasText, attempt]);
 
   const numPages = pdf?.numPages ?? pageCount ?? 0;
 

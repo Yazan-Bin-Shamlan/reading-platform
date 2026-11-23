@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2026-11-20T20:36:54Z</responseDate>
+                <request verb="GetRecord" identifier="oai:arXiv.org:2401.00001" metadataPrefix="arXiv">http://oaipmh.arxiv.org/oai</request>
+
+
+    <GetRecord>
+                <record>
+                <header>
+        <identifier>oai:arXiv.org:2401.00001</identifier>
+        <datestamp>2024-01-02</datestamp>
+            <setSpec>q-fin:q-fin:PM</setSpec>
+    </header>
+
+            <metadata>
+                        <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ https://oaipmh.arxiv.org/OAI/arXiv.xsd">
+        <id>2401.00001</id>
+        <created>2023-11-18</created>
+            <updated>2024-01-02</updated>
+        <authors>
+                <author>
+                    <keyname>Yang</keyname>
+                        <forenames>Runjia</forenames>
+                </author>
+                <author>
+                    <keyname>Shi</keyname>
+                        <forenames>Beining</forenames>
+                </author>
+        </authors>
+        <title>Sector Rotation by Factor Model and Fundamental Analysis</title>
+            <categories>q-fin.PM</categories>
+            <license>http://creativecommons.org/publicdomain/zero/1.0/</license>
+            <abstract>This study presents an analytical approach to sector rotation, leveraging both factor models and fundamental metrics. We initiate with a systematic classification of sectors, followed by an empirical investigation into their returns. Through factor analysis, the paper underscores the significance of momentum and short-term reversion in dictating sectoral shifts. A subsequent in-depth fundamental analysis evaluates metrics such as PE, PB, EV-to-EBITDA, Dividend Yield, among others. Our primary contribution lies in developing a predictive framework based on these fundamental indicators. The constructed models, post rigorous training, exhibit noteworthy predictive capabilities. The findings furnish a nuanced understanding of sector rotation strategies, with implications for asset management and portfolio construction in the financial domain.</abstract>
+    </arXiv>
+
+            </metadata>
+        </record>
+
+    </GetRecord>
+</OAI-PMH>

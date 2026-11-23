@@ -12,7 +12,7 @@ import type { TocEntry } from "@/lib/library/schemas";
 import { readPrefs } from "@/lib/reader/prefs";
 import { listAnnotations } from "@/lib/reader/queries";
 import { storage } from "@/lib/storage";
-import { TEXT_VERSION } from "@/lib/text/extract";
+import { textReady } from "@/lib/text/extract";
 
 const loadDoc = cache(async (docId: string, userId: string) =>
   db.document.findFirst({
@@ -59,7 +59,12 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/[lo
   }
 
   const [fileUrl, annotations, known, saved, provider] = await Promise.all([
-    storage().readUrl(content.storageKey, 6 * 3600),
+    // HTML books have no file to show, only their text; very large ones come through the proxy.
+    content.format !== "pdf"
+      ? null
+      : content.storageKey.startsWith("remote:")
+        ? `/api/proxy/${content.id}`
+        : storage().readUrl(content.storageKey, 6 * 3600),
     listAnnotations(doc.id, user!.id),
     db.knownWord.findMany({ where: { userId: user!.id }, select: { lang: true, lemma: true } }),
     db.savedWord.findMany({ where: { userId: user!.id }, select: { lang: true, lemma: true } }),
@@ -71,7 +76,7 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/[lo
     en: rows.filter((r) => r.lang === "en").map((r) => r.lemma),
   });
   const profile = doc.user;
-  const extracted = content.textVersion >= TEXT_VERSION;
+  const extracted = textReady(content);
 
   return (
     <Reader
@@ -79,6 +84,7 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/[lo
       title={doc.title}
       authors={doc.authors}
       fileUrl={fileUrl}
+      fileSize={content.byteSize}
       pageCount={content.pageCount}
       toc={(content.toc as TocEntry[] | null) ?? []}
       direction={(content.direction as "rtl" | "ltr" | "mixed" | null) ?? null}

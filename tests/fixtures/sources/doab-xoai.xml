@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-11-23T13:33:24Z</responseDate><request verb="GetRecord" identifier="oai:directory.doabooks.org:20.500.12854/186729" metadataPrefix="xoai">https://directory.doabooks.org/oai/request</request><GetRecord><record><header><identifier>oai:directory.doabooks.org:20.500.12854/186729</identifier><datestamp>2026-11-20T08:58:09Z</datestamp><setSpec>com_20.500.12854_5</setSpec><setSpec>col_20.500.12854_6</setSpec></header><metadata><metadata xmlns="http://www.lyncode.com/xoai" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+<element name="dc">
+<element name="contributor">
+<element name="author">
+<element name="none">
+<field name="value">Rzepka, Agnieszka</field>
+<field name="authority">cf19540f-0655-4d7f-8c12-2a039c97ac7f</field>
+<field name="value">Bańkowski, Paweł</field>
+<field name="authority">e18c07d4-da86-497b-baa0-af3c4118bcca</field>
+<field name="value">Boiko, Julia</field>
+<field name="authority">124d9635-8bf0-4590-a3b5-21451322a84f</field>
+</element>
+</element>
+</element>
+<element name="date">
+<element name="accessioned">
+<element name="none">
+<field name="value">2026-11-20T08:58:07Z</field>
+</element>
+</element>
+<element name="available">
+<element name="none">
+<field name="value">2026-11-20T08:58:07Z</field>
+</element>
+</element>
+<element name="issued">
+<element name="none">
+<field name="value">2026</field>
+</element>
+</element>
+</element>
+<element name="identifier">
+<element name="uri">
+<element name="none">
+<field name="value">https://directory.doabooks.org/handle/20.500.12854/186729</field>
+</element>
+</element>
+</element>
+<element name="description">
+<element name="abstract">
+<element name="en_US">
+<field name="value">The textbook addresses the issue of the functioning of small and medium-sized enterprises (SMEs) in a market economy. The aim of the publication is to present the basic legal, organizational, strategic conditions related to setting up and running a business. The publication is intended for management students enrolled in the course "Functioning of SMEs in a Market Economy," delivered in the form of lectures and exercises. The textbook discusses key issues, including legal forms of business activity, organizational employment structure, identification of key activities and target groups, and building a competitive advantage, including through innovation. The handbook presents numerous examples and best practices related to the current market situation. The authors address issues related to human resource management, competitiveness, access to sources of financing, and the impact of economic and technological factors on business operations. Particular attention is paid to the challenges facing entrepreneurs in a dynamically changing economic environment. Another important element of the publication is the analysis of the role of innovation and modern business models in building long-term market advantage in the SME market. The textbook has been designed in a didactic manner – each chapter contains definitions of concepts, case studies, problem-solving tasks, which develop students' analytical skills and prepare them to make informed business decisions.</field>
+</element>
+</element>
+<element name="version">
+<element name="en_US">
+<field name="value">Published</field>
+</element>
+</element>
+</element>
+<element name="language">
+<element name="en_US">
+<field name="value">pol</field>
+</element>
+</element>
+<element name="subject">
+<element name="classification">
+<element name="en_US">
+<field name="value">thema EDItEUR::K Economics, Finance, Business and Management</field>
+</element>
+</element>
+<element name="other">
+<element name="en_US">
+<field name="value">sektor MŚP</field>
+<field name="value">przedsiębiorczość</field>
+<field name="value">gospodarka</field>
+<field name="value">zarządzanie</field>
+<field name="value">strategia</field>
+<field name="value">przewaga konkurencyjna</field>
+<field name="value">innowacje</field>
+</element>
+</element>
+</element>
+<element name="title">
+<element name="en_US">
+<field name="value">Funkcjonowanie MŚP w gospodarce rynkowej</field>
+</element>
+</element>
+<element name="type">
+<element name="none">
+<field name="value">book</field>
+</element>
+</element>
+</element>
+<element name="oapen">
+<element name="abstract">
+<element name="otherlanguage">
+<element name="en_US">
+<field name="value">Podręcznik porusza zagadnienie funkcjonowania małych i średnich przedsiębiorstw (MŚP) w warunkach gospodarki rynkowej. Celem publikacji jest przedstawienie podstawowych uwarunkowań prawnych, organizacyjnych i strategicznych związanych z zakładaniem oraz prowadzeniem działalności gospodarczej. Publikacja adresowana jest do studentów zarządzania, uczęszczających na przedmiot Funkcjonowanie MŚP w gospodarce rynkowej, realizowany w formie wykładów oraz ćwiczeń. W podręczniku omówiono kluczowe zagadnienia, obejmujące m.in. formy prawne prowadzenia działalności gospodarczej, strukturę zatrudnienia w organizacji, identyfikację kluczowych działań oraz grup docelowych, a także budowanie przewagi konkurencyjnej, również poprzez tworzenie innowacji. W podręczniku omówione zostały liczne przykłady i dobre praktyki związane z aktualnymi uwarunkowaniami rynkowymi. Autorzy omawiają zagadnienia dotyczące zarządzania zasobami ludzkimi, konkurencyjnością, dostępem do źródeł finansowania oraz wpływem czynników ekonomicznych i technologicznych na działalność przedsiębiorstw. Zwrócono szczególną uwagę na wyzwania stojące przed przedsiębiorcami w dynamicznie zmieniającym się otoczeniu gospodarczym. Istotnym elementem publikacji jest także analiza roli innowacji oraz nowoczesnych modeli biznesowych w budowaniu długofalowej przewagi rynkowej MŚP. Podręcznik został zaprojektowana w sposób dydaktyczny – każdy rozdział zawiera definicje kluczowych pojęć, studia przypadków oraz zadania problemowe, co sprzyja kształtowaniu kompetencji analitycznych i decyzyjnych studentów oraz przygotowuje ich do podejmowania świadomych decyzji przedsiębiorczych.</field>
+</element>
+</element>
+</element>
+<element name="identifier">
+<element name="doi">
+<element name="en_US">
+<field name="value">10.35784/9788379476633</field>
+</element>
+</element>
+</element>
+<element name="relation">
+<element name="isPublishedBy">
+<element name="none">
+<field name="value">25440dcb-6509-4ffb-b078-818857fbed4b</field>
+</element>
+</element>
+<element name="isbn">
+<element name="en_US">
+<field name="value">978-83-7947-663-3</field>
+</element>
+</element>
+</element>
+<element name="imprint">
+<element name="en_US">
+<field name="value">Lublin University of Technology Publishing House</field>
+</element>
+</element>
+<element name="pages">
+<element name="en_US">
+<field name="value">169</field>
+</element>
+</element>
+<element name="place">
+<element name="publication">
+<element name="en_US">
+<field name="value">Lublin</field>
+</element>
+</element>
+</element>
+</element>
+<element name="bundles">
+<element name="bundle">
+<field name="name">THUMBNAIL</field>
+<element name="bitstreams">
+<element name="bitstream">
+<field name="name">Funkcjonowanie_MSP_9788379476633.pdf.jpg</field>
+<field name="originalName">Funkcjonowanie_MSP_9788379476633.pdf.jpg</field>
+<field name="description"/>
+<field name="format">image/jpeg</field>
+<field name="size">13934</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/186729/1/Funkcjonowanie_MSP_9788379476633.pdf.jpg</field>
+<field name="checksum">6873004e8babd8bed6a1d58a8d2c6182</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">1</field>
+<field name="oapenidentifierdownloadUrl">https://rock.pollub.pl/entities/publication/e80cf0b9-79e4-4001-9f34-059601bec840</field>
+<field name="oapenrelationisbn">978-83-7947-663-3</field>
+<field name="dcidentifierurlwebshop">https://wpl.pollub.pl/pl/c/Ksiegarnia/449</field>
+<field name="rightsuri">https://creativecommons.org/licenses/by-sa/4.0/</field>
+<field name="rights">CC-BY-SA</field>
+</element>
+<element name="bitstream">
+<field name="name">Funkcjonowanie_MSP_9788379476633.pdf</field>
+<field name="originalName">Funkcjonowanie_MSP_9788379476633.pdf</field>
+<field name="description"/>
+<field name="format">application/pdf</field>
+<field name="size">8477724</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/186729/2/Funkcjonowanie_MSP_9788379476633.pdf</field>
+<field name="checksum">51bacdb3f01e3137c110ea3ddebf6290</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">2</field>
+<field name="oapenidentifierdownloadUrl">https://rock.pollub.pl/entities/publication/e80cf0b9-79e4-4001-9f34-059601bec840</field>
+<field name="oapenrelationisbn">978-83-7947-663-3</field>
+<field name="dcidentifierurlwebshop">https://wpl.pollub.pl/pl/c/Ksiegarnia/449</field>
+<field name="rightsuri">https://creativecommons.org/licenses/by-sa/4.0/</field>
+<field name="rights">CC-BY-SA</field>
+</element>
+</element>
+</element>
+</element>
+<element name="others">
+<field name="uuid">007681a2-1ab0-4900-880a-0ad4ea88aa98</field>
+<field name="handle">20.500.12854/186729</field>
+<field name="identifier">oai:directory.doabooks.org:20.500.12854/186729</field>
+<field name="lastModifyDate">2026-11-20 08:58:09.97</field>
+</element>
+<element name="repository">
+<field name="name">DOAB PROD Instance</field>
+<field name="mail">info@oapen.org</field>
+</element>
+<element name="linkedItemsMetadata">
+<element name="oapen.relation.isPublishedBy">
+<field name="uuid">25440dcb-6509-4ffb-b078-818857fbed4b</field>
+<field name="handle">20.500.12854/100510</field>
+<element name="publisher.name">
+<field name="value">Lublin University of Technology Publishing House</field>
+</element>
+</element>
+</element>
+</metadata></metadata></record></GetRecord></OAI-PMH>

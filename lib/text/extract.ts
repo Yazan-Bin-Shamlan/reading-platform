@@ -3,11 +3,16 @@ import { join } from "node:path";
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import type { TocEntry } from "@/lib/library/schemas";
 import { storage } from "@/lib/storage";
+import { detectLanguage, textStatus } from "./analyze";
 import { edgeLines, reflowPage, type TextItem } from "./reflow";
 
 /** Bump when reflow changes enough that stored pages should be rebuilt. */
 export const TEXT_VERSION = 1;
+
+/** Whether a document's text pages are ready. HTML books get theirs when imported. */
+export const textReady = (c: { format: string; textVersion: number }) => c.format === "html" || c.textVersion >= TEXT_VERSION;
 
 const LOCK_MS = 5 * 60_000;
 const BATCH = 50;
@@ -25,6 +30,50 @@ function loadPdfjs() {
     (globalThis as { pdfjsWorker?: unknown }).pdfjsWorker ??= await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
     return pdfjs;
   })());
+}
+
+async function openPdf(data: Uint8Array): Promise<PdfDoc> {
+  const pdfjs = await loadPdfjs();
+  const root = join(process.cwd(), "node_modules", "pdfjs-dist");
+  return pdfjs.getDocument({
+    data,
+    cMapUrl: join(root, "cmaps") + "/",
+    cMapPacked: true,
+    standardFontDataUrl: join(root, "standard_fonts") + "/",
+    useSystemFonts: false,
+    verbosity: 0,
+  }).promise;
+}
+
+type OutlineNode = Awaited<ReturnType<PdfDoc["getOutline"]>>[number];
+
+/** Page count and table of contents of a PDF fetched on the server (the browser does this for uploads). */
+export async function inspectPdf(data: Uint8Array): Promise<{ pageCount: number; toc: TocEntry[] }> {
+  const pdf = await openPdf(data.slice());
+  try {
+    let budget = 2000;
+    const resolve = async (dest: OutlineNode["dest"]) => {
+      const explicit = typeof dest === "string" ? await pdf.getDestination(dest) : dest;
+      const ref = explicit?.[0];
+      if (ref == null) return null;
+      return typeof ref === "number" ? ref : pdf.getPageIndex(ref as Parameters<PdfDoc["getPageIndex"]>[0]);
+    };
+    const walk = async (nodes: OutlineNode[], depth: number): Promise<TocEntry[]> => {
+      const out: TocEntry[] = [];
+      for (const node of nodes) {
+        if (budget-- <= 0) break;
+        const page = await resolve(node.dest).catch(() => null);
+        const children = depth < 4 && node.items?.length ? await walk(node.items, depth + 1) : [];
+        const title = node.title?.replace(/\s+/g, " ").trim().slice(0, 500);
+        if (title) out.push({ title, page: page ?? children[0]?.page ?? 0, ...(children.length ? { children } : {}) });
+      }
+      return out;
+    };
+    const outline = await pdf.getOutline().catch(() => null);
+    return { pageCount: pdf.numPages, toc: outline?.length ? await walk(outline, 0) : [] };
+  } finally {
+    await pdf.loadingTask.destroy();
+  }
 }
 
 /** Page text items in the same order and with the same options as the browser's text layer. */
@@ -81,26 +130,23 @@ export async function extractContent(contentId: string) {
   let pdf: PdfDoc | null = null;
   try {
     const content = await db.content.findUniqueOrThrow({ where: { id: contentId } });
-    const data = await storage().read(content.storageKey);
-    const pdfjs = await loadPdfjs();
-    const root = join(process.cwd(), "node_modules", "pdfjs-dist");
-    pdf = await pdfjs.getDocument({
-      data,
-      cMapUrl: join(root, "cmaps") + "/",
-      cMapPacked: true,
-      standardFontDataUrl: join(root, "standard_fonts") + "/",
-      useSystemFonts: false,
-      verbosity: 0,
-    }).promise;
+    // Large books read from their source through the proxy aren't stored: fetch the whole file here.
+    const remote = content.storageKey.startsWith("remote:") ? content.storageKey.slice("remote:".length) : null;
+    const data = remote
+      ? new Uint8Array(await (await fetch(remote, { signal: AbortSignal.timeout(120_000) })).arrayBuffer())
+      : await storage().read(content.storageKey);
+    pdf = await openPdf(data);
 
     const furniture = await findFurniture(pdf);
     await db.contentPage.deleteMany({ where: { contentId } });
 
     const words: number[] = [];
+    const samples: string[] = [];
     let rows: Prisma.ContentPageCreateManyInput[] = [];
     for (let i = 0; i < pdf.numPages; i++) {
       const page = reflowPage(await pageItems(pdf, i), { furniture });
       words.push(page.words);
+      if (i < 8) samples.push(page.text);
       rows.push({ contentId, pageIndex: i, text: page.text, blocks: page.blocks, map: page.map, words: page.words });
       if (rows.length === BATCH || i === pdf.numPages - 1) {
         await db.contentPage.createMany({ data: rows });
@@ -108,9 +154,20 @@ export async function extractContent(contentId: string) {
         rows = [];
       }
     }
+    // Files fetched from a source weren't inspected in a browser: learn their language and status now.
+    const sample = samples.join("\n");
+    const lang = detectLanguage(sample);
     await db.content.update({
       where: { id: contentId },
-      data: { textVersion: TEXT_VERSION, extractLock: null, pageWords: words },
+      data: {
+        textVersion: TEXT_VERSION,
+        extractLock: null,
+        pageWords: words,
+        pageCount: content.pageCount ?? pdf.numPages,
+        ...(content.textStatus === "pending" ? { textStatus: textStatus(samples) } : {}),
+        ...(content.language ? {} : { language: lang.language }),
+        ...(content.direction ? {} : { direction: lang.direction }),
+      },
     });
   } catch (e) {
     console.error(`Text extraction failed for ${contentId}`, e);

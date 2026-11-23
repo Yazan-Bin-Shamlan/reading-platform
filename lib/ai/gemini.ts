@@ -24,7 +24,8 @@ const MODELS: Record<Tier, string> = {
 // Keep thinking short: it adds latency and tokens. Gemini 3.8 Flash's lowest level is LOW.
 const THINKING: Record<Tier, ThinkingLevel> = { fast: ThinkingLevel.MINIMAL, smart: ThinkingLevel.LOW };
 
-const TIMEOUT_MS: Record<Tier, number> = { fast: 45_000, smart: 25_000 };
+// A dense page can take Flash-Lite 10–20 s (it writes a lot); more when it's busy.
+const TIMEOUT_MS: Record<Tier, number> = { fast: 60_000, smart: 25_000 };
 
 /** Busy or too slow: worth trying another model. */
 const isOverloaded = (e: unknown) =>

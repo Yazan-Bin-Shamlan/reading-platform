@@ -1,8 +1,8 @@
-import { Compass, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "@/components/shell/empty-state";
+import { ExploreView, type ExploreFilters } from "@/components/explore/explore-view";
 import { PageHeader } from "@/components/shell/page-header";
-import { Input } from "@/components/ui/input";
+import { shelves } from "@/lib/sources/explore";
+import { sourceIds, type SourceId } from "@/lib/sources/types";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/explore">) {
   const { locale } = await params;
@@ -10,22 +10,26 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/explore"
   return { title: t("title") };
 }
 
-export default async function ExplorePage() {
+export default async function ExplorePage({ searchParams }: PageProps<"/[locale]/explore">) {
   const t = await getTranslations("explore");
+  const q = await searchParams;
+  const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
+  const filters: ExploreFilters = {
+    q: one(q.q).slice(0, 200),
+    lang: one(q.lang) === "ar" || one(q.lang) === "en" ? (one(q.lang) as "ar" | "en") : "",
+    type: one(q.type) === "book" || one(q.type) === "paper" ? (one(q.type) as "book" | "paper") : "",
+    source: (sourceIds as readonly string[]).includes(one(q.source)) ? (one(q.source) as SourceId) : "",
+  };
+  // Shelves only on the Explore home; they're cached for a day.
+  const searching = Boolean(filters.q || filters.lang || filters.type || filters.source);
+  const rows = searching ? [] : await shelves();
+
   return (
     <>
-      <PageHeader title={t("title")} />
-      <div className="relative max-w-2xl">
-        <Search aria-hidden className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          disabled
-          aria-label={t("searchPlaceholder")}
-          placeholder={t("searchPlaceholder")}
-          className="h-12 rounded-full ps-10 text-base"
-        />
-      </div>
-      <EmptyState icon={Compass} title={t("soonTitle")} body={t("soonBody")} />
+      <PageHeader title={t("title")}>
+        <p className="max-w-md text-sm text-muted-foreground">{t("subtitle")}</p>
+      </PageHeader>
+      <ExploreView filters={filters} shelves={rows} />
     </>
   );
 }

@@ -1,0 +1,96 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { db } from "@/lib/db";
+import type { Prisma } from "@/lib/generated/prisma/client";
+
+// Every request to a source goes through here: one queue per host with the
+// spacing that source asks for, an identifying User-Agent, timeouts, and
+// backing off on 429/503.
+
+export const USER_AGENT = `QiraaReader/0.1 (${process.env.APP_CONTACT || "contact not set"})`;
+
+/** Minimum gap between requests to a host, in ms. arXiv: one request every 3 seconds, one at a time. */
+const SPACING: Record<string, number> = {
+  "export.arxiv.org": 3100,
+  "oaipmh.arxiv.org": 3100,
+  "arxiv.org": 3100,
+  "gutendex.com": 500,
+  "www.gutenberg.org": 1000,
+  "directory.doabooks.org": 1000,
+  "api.openalex.org": 150,
+  "sites.dlib.nyu.edu": 300,
+  "mc.dlib.nyu.edu": 300,
+};
+const DEFAULT_SPACING = 250;
+const MAX_RETRY_WAIT_MS = 30_000;
+
+export class SourceError extends Error {
+  constructor(
+    public status: number,
+    public url: string,
+  ) {
+    super(`Source request failed (${status}): ${url}`);
+  }
+}
+
+const queues = new Map<string, { chain: Promise<unknown>; last: number }>();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Runs `fn` in the host's queue, after the host's spacing since the previous request. */
+function inQueue<T>(host: string, fn: () => Promise<T>): Promise<T> {
+  const q = queues.get(host) ?? { chain: Promise.resolve(), last: 0 };
+  queues.set(host, q);
+  const run = q.chain.then(async () => {
+    const wait = q.last + (SPACING[host] ?? DEFAULT_SPACING) - Date.now();
+    if (wait > 0) await sleep(wait);
+    try {
+      return await fn();
+    } finally {
+      q.last = Date.now();
+    }
+  });
+  q.chain = run.catch(() => {});
+  return run;
+}
+
+export async function sourceFetch(
+  url: string,
+  {
+    timeoutMs = 20_000,
+    accept = "application/json",
+    retries = 2,
+    headers = {},
+  }: { timeoutMs?: number; accept?: string; retries?: number; headers?: Record<string, string> } = {},
+): Promise<Response> {
+  const host = new URL(url).host;
+  for (let attempt = 0; ; attempt++) {
+    const res = await inQueue(host, () =>
+      fetch(url, {
+        headers: { "user-agent": USER_AGENT, accept, ...headers },
+        signal: AbortSignal.timeout(timeoutMs),
+        redirect: "follow",
+      }),
+    );
+    if ((res.status === 429 || res.status === 503) && attempt < retries) {
+      const after = Number(res.headers.get("retry-after"));
+      await sleep(Math.min(MAX_RETRY_WAIT_MS, after > 0 ? after * 1000 : 2000 * 2 ** attempt));
+      continue;
+    }
+    if (!res.ok) throw new SourceError(res.status, url);
+    return res;
+  }
+}
+
+export const getJson = async <T>(url: string) => (await sourceFetch(url)).json() as Promise<T>;
+export const getText = async (url: string, accept = "application/xml") => (await sourceFetch(url, { accept })).text();
+
+/** A source response cached in the database for `ttlSeconds`, so repeated queries don't hit the source. */
+export async function cached<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T> {
+  const id = createHash("sha256").update(key).digest("hex");
+  const hit = await db.sourceCache.findUnique({ where: { key: id } });
+  if (hit && hit.expiresAt > new Date()) return hit.body as T;
+  const body = await load();
+  const data = { body: body as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + ttlSeconds * 1000) };
+  await db.sourceCache.upsert({ where: { key: id }, create: { key: id, ...data }, update: data }).catch(() => {});
+  return body;
+}

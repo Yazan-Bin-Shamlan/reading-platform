@@ -52,9 +52,70 @@
   },
   "explore": {
     "title": "Explore",
+    "subtitle": "Free books and papers from open libraries, all public domain or openly licensed.",
     "searchPlaceholder": "Search books, papers and studies…",
-    "soonTitle": "The open library is on its way",
-    "soonBody": "Search across Project Gutenberg, DOAB, OpenAlex, arXiv and Arabic Collections Online, all free and openly licensed."
+    "clear": "Clear search",
+    "allLanguages": "All languages",
+    "arabic": "Arabic",
+    "english": "English",
+    "allTypes": "All",
+    "books": "Books",
+    "papers": "Papers",
+    "source": "Source",
+    "allSources": "All sources",
+    "sources": {
+      "gutenberg": "Project Gutenberg",
+      "doab": "DOAB",
+      "openalex": "OpenAlex",
+      "arxiv": "arXiv",
+      "aco": "Arabic Collections Online"
+    },
+    "shelves": {
+      "arabicClassics": "Arabic classics",
+      "classicNovels": "Popular classics",
+      "papersMonth": "Popular papers this month",
+      "arabicResearch": "Arabic research",
+      "newBooks": "New open-access books",
+      "arxivNew": "New on arXiv, openly licensed"
+    },
+    "shelvesUnavailable": "The open libraries aren't responding right now. Try searching, or come back in a little while.",
+    "searching": "Searching…",
+    "error": "Search didn't work. Please try again.",
+    "sourcesDown": "Not responding right now: {sources}.",
+    "noResults": "Nothing found. Try other words, or another language or source.",
+    "more": "Show more",
+    "inLibrary": "In library",
+    "added": "Added to your library",
+    "readNow": "Read now",
+    "preparing": "Preparing…",
+    "addToLibrary": "Add to library",
+    "openInLibrary": "Read",
+    "viewSource": "View on {source}",
+    "readOnSource": "Read on {source}",
+    "importErrors": {
+      "too-large": "This file is larger than 50 MB, so it can't be opened here. Read it on its source's site.",
+      "not-pdf": "The source didn't send a PDF. Read it on its source's site.",
+      "no-file": "There's no file to open for this item.",
+      "not-open": "This item isn't openly licensed, so it can't be opened here.",
+      "not-found": "This item couldn't be found.",
+      "unavailable": "The source isn't responding right now. Please try again in a moment."
+    },
+    "types": {
+      "book": "Book",
+      "paper": "Paper"
+    },
+    "languages": {
+      "ar": "Arabic",
+      "en": "English"
+    },
+    "scannedNote": "A scan of the printed book: it opens in Original mode.",
+    "textOnlyNote": "Opens in Reading mode, from Project Gutenberg's text edition.",
+    "linkOutNote": "This one is read on its source's site: its file can't be fetched for you here.",
+    "about": "About",
+    "license": "License",
+    "notFoundTitle": "Couldn't find this item",
+    "notFoundBody": "It may have been removed from its source, or the source isn't responding right now.",
+    "publicDomain": "Public domain"
   },
   "words": {
     "title": "My Words",

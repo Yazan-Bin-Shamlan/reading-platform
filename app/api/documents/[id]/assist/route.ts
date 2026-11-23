@@ -4,7 +4,7 @@ import { pausedUntil, userLimitReached } from "@/lib/ai/quota";
 import { analyzeLater, cachedPages, hasFailed } from "@/lib/assist/analyze";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { extractLater, TEXT_VERSION } from "@/lib/text/extract";
+import { extractLater, textReady } from "@/lib/text/extract";
 
 // Analysis continues after the response (see analyzeLater).
 export const maxDuration = 300;
@@ -21,7 +21,10 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/documents/[i
   const { id } = await ctx.params;
   const doc = await db.document.findFirst({
     where: { id, userId: user.id },
-    select: { assistEnabled: true, content: { select: { id: true, textVersion: true, textStatus: true, pageCount: true } } },
+    select: {
+      assistEnabled: true,
+      content: { select: { id: true, format: true, textVersion: true, textStatus: true, pageCount: true } },
+    },
   });
   const content = doc?.content;
   if (!doc || !content) return NextResponse.json({ error: "not-found" }, { status: 404 });
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/documents/[i
   if (!ai) return NextResponse.json({ status: "unavailable" });
   if (!doc.assistEnabled) return NextResponse.json({ status: "off" });
   if (content.textStatus === "scanned") return NextResponse.json({ status: "no-text" });
-  if (content.textVersion < TEXT_VERSION) {
+  if (!textReady(content)) {
     extractLater(content.id);
     return NextResponse.json({ status: "preparing" });
   }

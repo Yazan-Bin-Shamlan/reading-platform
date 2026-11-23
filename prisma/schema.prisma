@@ -87,10 +87,12 @@ model Profile {
 
 model CatalogItem {
   id          String   @id @default(cuid())
-  source      String // gutendex | doab | openalex | arxiv | aco | …
+  source      String // gutenberg | doab | openalex | arxiv | aco | …
   sourceId    String
   type        ItemType
   title       String
+  /// The title in the other script (e.g. the transliterated form of an Arabic title).
+  altTitle    String?
   authors     String[]
   language    Lang
   year        Int?
@@ -105,13 +107,27 @@ model CatalogItem {
   sourceUrl   String
   /// Link out only, never host (e.g. Hindawi).
   linkOutOnly Boolean  @default(false)
+  /// The file once fetched and cached (shared by everyone who opens it).
+  contentId   String?
   syncedAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   documents Document[]
+  content   Content?   @relation(fields: [contentId], references: [id])
 
   @@unique([source, sourceId])
   @@index([language, type])
+  @@index([source, syncedAt])
+}
+
+/// Cached responses from source APIs (search results, shelves), so repeated
+/// queries don't hit rate-limited services.
+model SourceCache {
+  key       String   @id // sha256 of the request
+  body      Json
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model SyncState {
@@ -146,6 +162,7 @@ model Content {
   pages       ContentPage[]
   documents   Document[]
   assistPages AssistPage[]
+  catalog     CatalogItem[]
 }
 
 model ContentPage {

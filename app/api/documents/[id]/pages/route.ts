@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { extractLater, TEXT_VERSION } from "@/lib/text/extract";
+import { extractLater, textReady, TEXT_VERSION } from "@/lib/text/extract";
 
 // Extraction may run after the response (see extractLater).
 export const maxDuration = 300;
@@ -19,12 +19,12 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/documents/[i
   const { id } = await ctx.params;
   const doc = await db.document.findFirst({
     where: { id, userId: user.id },
-    select: { content: { select: { id: true, textVersion: true, pageCount: true } } },
+    select: { content: { select: { id: true, format: true, textVersion: true, pageCount: true } } },
   });
   const content = doc?.content;
   if (!content) return NextResponse.json({ error: "not-found" }, { status: 404 });
 
-  if (content.textVersion < TEXT_VERSION) {
+  if (!textReady(content)) {
     extractLater(content.id);
     return NextResponse.json({ status: "pending" }, { status: 202, headers: { "retry-after": "1" } });
   }
