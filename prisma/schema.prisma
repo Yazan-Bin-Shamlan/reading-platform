@@ -1,0 +1,336 @@
+// Data model. Users live in Supabase Auth (auth.users); Profile.id is that uuid.
+// Every table has RLS enabled with no policies (see migrations), so Supabase's
+// public Data API exposes nothing. All access goes through server code, which
+// checks the signed-in user.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Lang {
+  ar
+  en
+}
+
+enum ItemType {
+  book
+  paper
+  study
+  article
+  other
+}
+
+enum DocOrigin {
+  upload
+  catalog
+}
+
+enum DocFormat {
+  pdf
+  html
+}
+
+enum TextStatus {
+  pending
+  ok
+  scanned // no text layer; needs OCR (phase 2)
+  garbled // text layer exists but is unusable
+}
+
+enum AnnotationKind {
+  highlight
+  note
+  bookmark
+}
+
+enum EnglishLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum ExplainLang {
+  ar
+  en
+  both
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────
+
+model Profile {
+  id            String        @id @db.Uuid
+  displayName   String?
+  /// Reader + UI preferences: theme, font, size, lineHeight, margins, width, mode, uiLang.
+  preferences   Json          @default("{}")
+  englishLevel  EnglishLevel?
+  assistEnabled Boolean       @default(true)
+  /// 0 (few highlights) … 100 (many).
+  assistDensity Int           @default(50)
+  explainLang   ExplainLang   @default(both)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  documents   Document[]
+  progress    ReadingProgress[]
+  annotations Annotation[]
+  knownWords  KnownWord[]
+  savedWords  SavedWord[]
+  aiUsage     AiUserUsage[]
+}
+
+// ── Explore catalog (metadata only; files are fetched on demand) ───────────
+
+model CatalogItem {
+  id          String   @id @default(cuid())
+  source      String // gutendex | doab | openalex | arxiv | aco | …
+  sourceId    String
+  type        ItemType
+  title       String
+  authors     String[]
+  language    Lang
+  year        Int?
+  abstract    String?
+  subjects    String[]
+  coverUrl    String?
+  pdfUrl      String?
+  htmlUrl     String?
+  license     String
+  licenseUrl  String?
+  attribution String?
+  sourceUrl   String
+  /// Link out only, never host (e.g. Hindawi).
+  linkOutOnly Boolean  @default(false)
+  syncedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents Document[]
+
+  @@unique([source, sourceId])
+  @@index([language, type])
+}
+
+model SyncState {
+  source    String    @id
+  cursor    String?
+  lastRunAt DateTime?
+  lastError String?
+}
+
+// ── Content: one row per unique file (sha256), shared by everyone who has it ─
+// Text extraction and Smart Assist results attach here, so the same book is
+// processed once no matter how many people read it.
+
+model Content {
+  id         String     @id // sha256 of the file bytes
+  format     DocFormat
+  storageKey String
+  byteSize   Int
+  pageCount  Int?
+  language   Lang?
+  direction  String? // rtl | ltr | mixed
+  textStatus TextStatus @default(pending)
+  toc        Json?
+  createdAt  DateTime   @default(now())
+
+  pages       ContentPage[]
+  documents   Document[]
+  assistPages AssistPage[]
+}
+
+model ContentPage {
+  contentId String
+  pageIndex Int
+  text      String
+  /// Paragraph blocks as character ranges into `text`: [{ s, e, k }].
+  blocks    Json
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, pageIndex])
+}
+
+// ── A user's library ───────────────────────────────────────────────────────
+
+model Document {
+  id            String    @id @default(cuid())
+  userId        String    @db.Uuid
+  origin        DocOrigin
+  type          ItemType  @default(other)
+  title         String
+  authors       String[]
+  language      Lang?
+  coverKey      String?
+  /// Off = this document's text is never sent to the AI provider.
+  assistEnabled Boolean   @default(true)
+  contentId     String?
+  catalogItemId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastOpenedAt  DateTime?
+
+  user        Profile          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content?         @relation(fields: [contentId], references: [id])
+  catalogItem CatalogItem?     @relation(fields: [catalogItemId], references: [id])
+  progress    ReadingProgress?
+  annotations Annotation[]
+  savedWords  SavedWord[]
+
+  @@unique([userId, catalogItemId])
+  @@index([userId, lastOpenedAt])
+}
+
+model ReadingProgress {
+  documentId String   @id
+  userId     String   @db.Uuid
+  pageIndex  Int
+  blockIndex Int?
+  charOffset Int?
+  percent    Float    @default(0)
+  updatedAt  DateTime @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Anchored to page text offsets, plus the quoted text with a little context
+/// so it can be re-found if offsets ever shift.
+model Annotation {
+  id         String         @id @default(cuid())
+  userId     String         @db.Uuid
+  documentId String
+  kind       AnnotationKind
+  color      String?
+  pageIndex  Int
+  start      Int?
+  end        Int?
+  quote      String?
+  prefix     String?
+  suffix     String?
+  note       String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, pageIndex])
+}
+
+// ── Smart Reading Assist ───────────────────────────────────────────────────
+
+/// One AI analysis per page, independent of the reader's level: every term
+/// carries its own difficulty, and filtering happens on the client.
+model AssistPage {
+  contentId     String
+  pageIndex     Int
+  promptVersion Int
+  model         String
+  terms         Json
+  createdAt     DateTime @default(now())
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, pageIndex, promptVersion])
+}
+
+/// Wikidata facts for a person/place/organization.
+model Entity {
+  id            String   @id // Wikidata QID
+  labelEn       String?
+  labelAr       String?
+  descriptionEn String?
+  descriptionAr String?
+  born          String?
+  died          String?
+  imageUrl      String?
+  wikiUrlEn     String?
+  wikiUrlAr     String?
+  fetchedAt     DateTime @default(now())
+
+  lookups EntityLookup[]
+}
+
+/// Name → entity resolution. entityId null = searched and not found.
+model EntityLookup {
+  query      String
+  lang       Lang
+  entityId   String?
+  confidence Float    @default(0)
+  fetchedAt  DateTime @default(now())
+
+  entity Entity? @relation(fields: [entityId], references: [id])
+
+  @@id([query, lang])
+}
+
+/// "Explain more", "Explain this paragraph" and selection lookups.
+model ExplainCache {
+  key       String   @id // hash(kind, text, context, lang, model, promptVersion)
+  kind      String
+  model     String
+  response  Json
+  createdAt DateTime @default(now())
+}
+
+model KnownWord {
+  userId    String   @db.Uuid
+  lang      Lang
+  lemma     String
+  createdAt DateTime @default(now())
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lang, lemma])
+}
+
+model SavedWord {
+  id           String   @id @default(cuid())
+  userId       String   @db.Uuid
+  lang         Lang
+  lemma        String
+  surface      String
+  translation  String?
+  meaning      String?
+  sentence     String
+  documentId   String?
+  pageIndex    Int?
+  start        Int?
+  end          Int?
+  // Flashcard scheduling (simple SM-2).
+  dueAt        DateTime @default(now())
+  intervalDays Float    @default(0)
+  ease         Float    @default(2.5)
+  reps         Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user     Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, lang, lemma])
+  @@index([userId, dueAt])
+}
+
+/// Project-wide AI requests per day and model (the free-tier quota is shared).
+model AiUsage {
+  day         DateTime  @db.Date
+  model       String
+  requests    Int       @default(0)
+  pausedUntil DateTime?
+
+  @@id([day, model])
+}
+
+/// Per-user daily requests, so one heavy reader can't use up everyone's quota.
+model AiUserUsage {
+  userId   String   @db.Uuid
+  day      DateTime @db.Date
+  requests Int      @default(0)
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+}
