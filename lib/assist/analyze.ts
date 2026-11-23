@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { PROMPT_VERSION, type DocLang } from "@/lib/ai/prompts";
 import type { AiProvider } from "@/lib/ai/provider";
+import { AiBusyError } from "@/lib/ai/limits";
 import { AiPausedError, AiUserLimitError, runAi } from "@/lib/ai/quota";
 import type { Term } from "@/lib/ai/schemas";
 import { detectLanguage } from "@/lib/text/analyze";
@@ -12,10 +13,11 @@ import { locateTerms } from "./locate";
 
 /** Pages being analysed right now on this server instance, so a page is sent once. */
 const inFlight = new Set<string>();
-/** Pages whose analysis just failed: not retried for a while, so they don't use up the quota. */
-const failedAt = new Map<string, number>();
+/** Pages whose analysis just failed, and until when they aren't retried (so failures don't use up the quota). */
+const retryAfter = new Map<string, number>();
 const RETRY_FAILED_MS = 10 * 60_000;
-const recentlyFailed = (key: string) => (failedAt.get(key) ?? 0) > Date.now() - RETRY_FAILED_MS;
+const RETRY_BUSY_MS = 60_000;
+const recentlyFailed = (key: string) => (retryAfter.get(key) ?? 0) > Date.now();
 
 /** The page's language, by script: Arabic if it's mostly Arabic. */
 export const pageLang = (text: string): DocLang => (detectLanguage(text).language === "ar" ? "ar" : "en");
@@ -61,8 +63,9 @@ export function analyzeLater(ai: AiProvider, contentId: string, pages: number[],
           await analyze(ai, contentId, page, userId);
         } catch (e) {
           if (e instanceof AiPausedError || e instanceof AiUserLimitError) return;
-          console.error(`Smart Assist: page ${page} of ${contentId} failed`, e);
-          failedAt.set(`${contentId}:${page}`, Date.now());
+          const busy = e instanceof AiBusyError;
+          if (!busy) console.error(`Smart Assist: page ${page} of ${contentId} failed`, e);
+          retryAfter.set(`${contentId}:${page}`, Date.now() + (busy ? RETRY_BUSY_MS : RETRY_FAILED_MS));
         } finally {
           inFlight.delete(`${contentId}:${page}`);
         }

@@ -92,7 +92,9 @@ export const PdfPage = memo(function PdfPage({
         return;
       }
       if (!cancelled) onTextLayer(index, textLayer.textDivs);
-    })();
+    })().catch(() => {
+      // The document was closed mid-render (mode switch, leaving the reader).
+    });
 
     return () => {
       cancelled = true;

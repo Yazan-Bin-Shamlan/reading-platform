@@ -10,6 +10,13 @@ export class AiQuotaError extends Error {
   }
 }
 
+/** The model is overloaded or too slow right now (HTTP 503/504, timeouts): worth retrying soon. */
+export class AiBusyError extends Error {
+  constructor() {
+    super("AI model busy");
+  }
+}
+
 /**
  * Reads a rate-limit error (HTTP 429): a daily quota mentions the day
  * ("PerDay", "daily", quota_exceeded); anything else is per-minute.

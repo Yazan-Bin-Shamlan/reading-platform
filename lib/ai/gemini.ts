@@ -1,7 +1,7 @@
 import "server-only";
 import { ApiError, GoogleGenAI, ThinkingLevel, type GenerateContentConfig } from "@google/genai";
 import { lookupPrompt, morePrompt, pagePrompt, paragraphPrompt, type DocLang } from "./prompts";
-import { quotaErrorFrom } from "./limits";
+import { AiBusyError, quotaErrorFrom } from "./limits";
 import type { AiProvider, Tier } from "./provider";
 import {
   lookupJsonSchema,
@@ -24,26 +24,47 @@ const MODELS: Record<Tier, string> = {
 // Keep thinking short: it adds latency and tokens. Gemini 3.8 Flash's lowest level is LOW.
 const THINKING: Record<Tier, ThinkingLevel> = { fast: ThinkingLevel.MINIMAL, smart: ThinkingLevel.LOW };
 
-/** Turns a Gemini error into a quota error when it is one. */
-const asQuotaError = (e: unknown) => (e instanceof ApiError && quotaErrorFrom(e.status, e.message ?? "")) || e;
+const TIMEOUT_MS: Record<Tier, number> = { fast: 45_000, smart: 25_000 };
+
+/** Busy or too slow: worth trying another model. */
+const isOverloaded = (e: unknown) =>
+  (e instanceof ApiError && (e.status === 503 || e.status === 504)) ||
+  (e instanceof Error && /timed? ?out|abort|deadline/i.test(e.message));
+
+/** Turns a Gemini error into a quota or busy error when it is one, so the queue can retry or pause. */
+const asQuotaError = (e: unknown) =>
+  (e instanceof ApiError && quotaErrorFrom(e.status, e.message ?? "")) || (isOverloaded(e) ? new AiBusyError() : e);
 
 export function createGemini(apiKey: string): AiProvider {
   const ai = new GoogleGenAI({ apiKey });
 
-  async function json(tier: Tier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
+  async function call(tier: Tier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
     const model = MODELS[tier];
     const config: GenerateContentConfig = {
       systemInstruction: prompt.system,
       responseMimeType: "application/json",
       responseJsonSchema: schema,
       // Our own queue handles retries, so a daily limit can pause Smart Assist instead.
-      httpOptions: { timeout: 60_000, retryOptions: { attempts: 1 } },
+      httpOptions: { timeout: TIMEOUT_MS[tier], retryOptions: { attempts: 1 } },
     };
     if (model.startsWith("gemini-3")) config.thinkingConfig = { thinkingLevel: THINKING[tier] };
+    const res = await ai.models.generateContent({ model, contents: prompt.user, config });
+    return JSON.parse(res.text ?? "null");
+  }
+
+  async function json(tier: Tier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
     try {
-      const res = await ai.models.generateContent({ model, contents: prompt.user, config });
-      return JSON.parse(res.text ?? "null");
+      return await call(tier, prompt, schema);
     } catch (e) {
+      // The stronger model is often busy on the free tier (503) or slow (timeout):
+      // answer with the fast one rather than not at all.
+      if (tier === "smart" && isOverloaded(e)) {
+        try {
+          return await call("fast", prompt, schema);
+        } catch (e2) {
+          throw asQuotaError(e2);
+        }
+      }
       throw asQuotaError(e);
     }
   }

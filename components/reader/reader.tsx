@@ -69,6 +69,8 @@ export type ReaderProps = {
   initialPrefs: ReaderPrefs;
   initialAnnotations: Annotation[];
   assist: AssistInitial;
+  /** Open at this text and flash it (links from My Words). */
+  jump?: { page: number; start: number; end: number } | null;
 };
 
 type Panel = "toc" | "notes" | "search" | "help" | null;
@@ -111,7 +113,8 @@ const unionRect = (rects: DOMRect[]) => {
 };
 
 export function Reader(props: ReaderProps) {
-  const { docId, title, authors, fileUrl, pageCount, toc, direction, language, textStatus, pageWords, initial } = props;
+  const { docId, title, authors, fileUrl, pageCount, toc, direction, language, textStatus, pageWords, jump } = props;
+  const initial = jump ? { page: jump.page, offset: 0 } : props.initial;
   const t = useTranslations("reader");
   const tn = useTranslations("notes");
   const locale = useLocale();
@@ -152,6 +155,7 @@ export function Reader(props: ReaderProps) {
   const [current, setCurrent] = useState(initial?.page ?? 0);
   const latest = useRef<Anchor | null>(initial);
   const [startAt, setStartAt] = useState<Anchor | null>(initial);
+  const [flash, setFlash] = useState(jump ?? null);
   const onPosition = useCallback((p: Position & { current: number }) => {
     latest.current = { page: p.pageIndex, offset: p.offset };
     setPosition({ pageIndex: p.pageIndex, offset: p.offset, percent: p.percent });
@@ -166,6 +170,12 @@ export function Reader(props: ReaderProps) {
   const [pauseSeen, setPauseSeen] = useState(false);
 
   useEffect(() => {
+    if (jump) {
+      // Scroll to the exact text once the page is there, and flash it for a moment.
+      view.current?.goTo(jump.page, { start: jump.start });
+      const id = setTimeout(() => setFlash(null), 6000);
+      return () => clearTimeout(id);
+    }
     if (initial && initial.page > 0) {
       const id = setTimeout(() => toast(t("resumed", { page: initial.page + 1 })), 300);
       return () => clearTimeout(id);
@@ -440,10 +450,11 @@ export function Reader(props: ReaderProps) {
     paint("search", near.flatMap((h) => v.ranges(h.page, h.start, h.end)));
     const active = hits[hitIndex];
     paint("search-current", active ? v.ranges(active.page, active.start, active.end) : []);
-  }, [annotations, hits, hitIndex, current, paintTick, mode]);
+    paint("flash", flash ? v.ranges(flash.page, flash.start, flash.end) : []);
+  }, [annotations, hits, hitIndex, current, paintTick, mode, flash]);
   useEffect(
     () => () => {
-      for (const name of [...highlightColors.map((c) => `hl-${c}`), "hl-note", "search", "search-current"]) paint(name, []);
+      for (const name of [...highlightColors.map((c) => `hl-${c}`), "hl-note", "search", "search-current", "flash"]) paint(name, []);
     },
     [],
   );

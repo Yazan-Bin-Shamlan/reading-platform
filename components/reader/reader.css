@@ -48,6 +48,8 @@
 
 ::highlight(search) { background-color: var(--hl-search); }
 ::highlight(search-current) { background-color: var(--hl-search-current); }
+/* The word a My Words link points to. */
+::highlight(flash) { background-color: color-mix(in oklab, var(--brand) 35%, transparent); }
 
 /* Reading mode typography. Sizes are in em of the reader's chosen text size. */
 .reflow {

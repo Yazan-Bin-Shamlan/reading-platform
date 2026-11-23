@@ -1,6 +1,6 @@
 // Prompts for Smart Reading Assist. Bump PROMPT_VERSION when a change should
 // invalidate cached page analyses and explanations.
-export const PROMPT_VERSION = 1;
+export const PROMPT_VERSION = 3;
 
 export type DocLang = "en" | "ar";
 
@@ -15,7 +15,16 @@ const ENGLISH_PAGE = `You help a native Arabic speaker read English. Mark what t
 - Key concepts the passage depends on (kind concept).
 Mark each item once (its first appearance). At most 30 items; prefer the most useful.
 For each item copy "text" exactly as written in that paragraph. Write "translation", "simpleAr" and "contextAr" in Modern Standard Arabic; "simple", "context" and "example" in easy English.
-For people, places, organisations and events, give "nameEn" (full canonical name, e.g. "Charles Darwin") and "nameAr", and explain "why" this paragraph mentions them using only the text. Never invent biographical facts.`;
+For people, places, organisations and events, give "nameEn" (full canonical name, e.g. "Charles Darwin") and "nameAr", and explain "why" this paragraph mentions them using only the text. Never invent biographical facts.
+
+Fields:
+- p: the paragraph number [n]; text: the exact words as written there; lemma: dictionary form (for names, the name)
+- pos: part of speech (noun, verb, idiom…); ipa: IPA pronunciation, e.g. /ɪˈfɛm(ə)rəl/
+- translation: a short Arabic translation (one to four words)
+- simple / simpleAr: the plain meaning in at most 15 easy words
+- context / contextAr: what the word means in THIS sentence, at most 20 words (explain the sense; don't repeat or translate the sentence)
+- example: one new short sentence using it
+- why / whyAr: for names only, why this paragraph mentions them`;
 
 const ARABIC_PAGE = `أنت تساعد قارئًا عربيًا على فهم نص عربي قد يكون تراثيًا أو متخصصًا. حدّد في هذه الصفحة:
 - الكلمات والعبارات الصعبة أو الفصيحة النادرة أو التراثية أو المصطلحات المتخصصة. قيّم صعوبتها من 1 (شائعة) إلى 5 (نادرة أو تراثية جدًا). تجاهل الكلمات المألوفة.
@@ -23,7 +32,15 @@ const ARABIC_PAGE = `أنت تساعد قارئًا عربيًا على فهم �
 - المفاهيم الأساسية التي يعتمد عليها النص (kind concept).
 علّم كل عنصر مرة واحدة (أول ظهور)، وبحد أقصى 30 عنصرًا.
 انسخ "text" كما ورد في الفقرة تمامًا بالتشكيل نفسه. اكتب "simple" و"context" و"example" بعربية معاصرة بسيطة، و"translation" ترجمةً إنجليزية قصيرة. اترك "simpleAr" و"contextAr" فارغين.
-للأشخاص والأماكن والمؤسسات والأحداث أعطِ "nameEn" (الاسم الإنجليزي المعتمد، مثل "Ibn Khaldun") و"nameAr"، واشرح في "why" سبب ذكرهم في الفقرة اعتمادًا على النص فقط، ولا تخترع معلومات عن سيرتهم. اترك "whyAr" فارغًا.`;
+للأشخاص والأماكن والمؤسسات والأحداث أعطِ "nameEn" (الاسم الإنجليزي المعتمد، مثل "Ibn Khaldun") و"nameAr"، واشرح سبب ذكرهم في الفقرة اعتمادًا على النص فقط: بالعربية في "whyAr" وبالإنجليزية السهلة في "why". لا تخترع معلومات عن سيرتهم.
+
+الحقول:
+- p: رقم الفقرة [n]؛ text: الكلمات كما وردت تمامًا؛ lemma: الصيغة المعجمية (وللأسماء: الاسم)
+- pos: نوع الكلمة؛ translation: ترجمة إنجليزية قصيرة
+- simple: المعنى بعربية معاصرة بسيطة في 15 كلمة على الأكثر
+- context: معنى الكلمة في هذه الجملة تحديدًا في 20 كلمة على الأكثر (اشرح المعنى، ولا تكرر الجملة)
+- example: جملة قصيرة جديدة تستعمل الكلمة
+- why / whyAr: للأسماء فقط، سبب ذكرها في الفقرة`;
 
 export function pagePrompt(lang: DocLang, paragraphs: string[]) {
   return {

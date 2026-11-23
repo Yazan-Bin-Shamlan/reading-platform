@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { PROMPT_VERSION } from "@/lib/ai/prompts";
 import { getProvider } from "@/lib/ai/provider";
+import { AiBusyError } from "@/lib/ai/limits";
 import { AiPausedError, AiUnavailableError, AiUserLimitError, runAi } from "@/lib/ai/quota";
 import { pageLang } from "@/lib/assist/analyze";
 import { locateTerms } from "@/lib/assist/locate";
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     if (e instanceof AiPausedError) return NextResponse.json({ status: "paused", until: e.until.toISOString() }, { status: 503 });
     if (e instanceof AiUserLimitError) return NextResponse.json({ status: "limit" }, { status: 429 });
     if (e instanceof AiUnavailableError) return NextResponse.json({ status: "unavailable" }, { status: 503 });
+    if (e instanceof AiBusyError) return NextResponse.json({ status: "aiBusy" }, { status: 503 });
     console.error("Smart Assist explain failed", e);
     return NextResponse.json({ status: "error" }, { status: 502 });
   }

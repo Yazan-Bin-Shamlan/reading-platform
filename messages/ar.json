@@ -59,7 +59,30 @@
   "words": {
     "title": "كلماتي",
     "emptyTitle": "لم تحفظ أي كلمة بعد",
-    "emptyBody": "أثناء القراءة، انقر على كلمة مميّزة واختر «احفظ في كلماتي»، وستظهر هنا مع الجملة التي وجدتها فيها."
+    "emptyBody": "أثناء القراءة، انقر على كلمة مميّزة واختر «احفظ في كلماتي»، وستظهر هنا مع الجملة التي وجدتها فيها.",
+    "count": "{count, plural, zero {لا كلمات} one {كلمة واحدة} two {كلمتان} few {# كلمات} many {# كلمة} other {# كلمة}}",
+    "openLibrary": "افتح مكتبتي",
+    "reviewDue": "{count, plural, one {راجع كلمة واحدة} two {راجع كلمتين} few {راجع # كلمات} many {راجع # كلمة} other {راجع # كلمة}}",
+    "practise": "تدرّب",
+    "export": "تصدير",
+    "exportCsv": "CSV",
+    "exportCsvHint": "لبرامج Excel أو Numbers أو Google Sheets",
+    "exportAnki": "Anki",
+    "exportAnkiHint": "استورده في Anki من File ← Import",
+    "search": "ابحث في كلماتي",
+    "all": "الكل",
+    "english": "الإنجليزية",
+    "arabic": "العربية",
+    "noMatches": "لا توجد كلمات مطابقة.",
+    "listen": "استمع",
+    "page": "ص {page}",
+    "noSource": "من مستند أزلته",
+    "new": "جديدة",
+    "dueNow": "حان وقت مراجعتها",
+    "nextReview": "المراجعة {when}",
+    "remove": "إزالة «{word}»",
+    "removed": "أُزيلت «{word}»",
+    "undo": "تراجع"
   },
   "settings": {
     "title": "الإعدادات",
@@ -332,7 +355,33 @@
       "off": "المساعد الذكي متوقف لهذا المستند.",
       "empty": "لا يوجد ما يُشرح هنا.",
       "busy": "ويكيبيديا مشغولة الآن. حاول بعد لحظات.",
-      "error": "لم ينجح ذلك. حاول مرة أخرى."
+      "error": "لم ينجح ذلك. حاول مرة أخرى.",
+      "aiBusy": "الذكاء الاصطناعي مشغول جدًا الآن. حاول بعد لحظات."
     }
+  },
+  "review": {
+    "title": "المراجعة",
+    "progress": "التقدم",
+    "listen": "استمع",
+    "show": "أظهر الإجابة",
+    "grades": {
+      "again": "مجددًا",
+      "hard": "صعبة",
+      "good": "جيدة",
+      "easy": "سهلة"
+    },
+    "minutes": "{count} د",
+    "days": "{count, plural, one {يوم} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+    "months": "{count, plural, one {شهر} two {شهران} few {# أشهر} many {# شهرًا} other {# شهر}}",
+    "saveFailed": "تعذّر حفظ هذه الإجابة.",
+    "doneTitle": "أحسنت، انتهيت",
+    "doneBody": "{count, plural, one {راجعت كلمة واحدة.} two {راجعت كلمتين.} few {راجعت # كلمات.} many {راجعت # كلمة.} other {راجعت # كلمة.}} ستعود كل كلمة قبيل أن تنساها.",
+    "backToWords": "العودة إلى كلماتي",
+    "nothingDueTitle": "لا شيء للمراجعة الآن",
+    "nothingDueBody": "تعود الكلمات للمراجعة قبيل أن تنساها، ويمكنك التدرب الآن إن شئت.",
+    "practiseAnyway": "تدرّب على أي حال",
+    "noWordsTitle": "لا كلمات للتدرب بعد",
+    "noWordsBody": "أثناء القراءة، المس كلمة معلَّمة واختر «احفظ في كلماتي».",
+    "openLibrary": "افتح مكتبتي"
   }
 }

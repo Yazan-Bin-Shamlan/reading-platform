@@ -59,7 +59,30 @@
   "words": {
     "title": "My Words",
     "emptyTitle": "No saved words yet",
-    "emptyBody": "While reading, tap a marked word and choose “Save to my words”. It will appear here with the sentence you found it in."
+    "emptyBody": "While reading, tap a marked word and choose “Save to my words”. It will appear here with the sentence you found it in.",
+    "count": "{count, plural, one {# word} other {# words}}",
+    "openLibrary": "Open my library",
+    "reviewDue": "{count, plural, one {Review # word} other {Review # words}}",
+    "practise": "Practise",
+    "export": "Export",
+    "exportCsv": "CSV",
+    "exportCsvHint": "For Excel, Numbers or Google Sheets",
+    "exportAnki": "Anki",
+    "exportAnkiHint": "Import in Anki with File → Import",
+    "search": "Search my words",
+    "all": "All",
+    "english": "English",
+    "arabic": "Arabic",
+    "noMatches": "No words match.",
+    "listen": "Listen",
+    "page": "p. {page}",
+    "noSource": "From a document you removed",
+    "new": "New",
+    "dueNow": "Due for review",
+    "nextReview": "Review {when}",
+    "remove": "Remove “{word}”",
+    "removed": "“{word}” removed",
+    "undo": "Undo"
   },
   "settings": {
     "title": "Settings",
@@ -332,7 +355,33 @@
       "off": "Smart Assist is off for this document.",
       "empty": "Nothing to explain here.",
       "busy": "Wikipedia is busy right now. Try again in a moment.",
-      "error": "That didn't work. Please try again."
+      "error": "That didn't work. Please try again.",
+      "aiBusy": "The AI is very busy right now. Try again in a moment."
     }
+  },
+  "review": {
+    "title": "Review",
+    "progress": "Progress",
+    "listen": "Listen",
+    "show": "Show answer",
+    "grades": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "minutes": "{count} min",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "months": "{count, plural, one {# month} other {# months}}",
+    "saveFailed": "That answer couldn't be saved.",
+    "doneTitle": "All done",
+    "doneBody": "{count, plural, one {You reviewed # word.} other {You reviewed # words.}} Each comes back just before you'd forget it.",
+    "backToWords": "Back to My Words",
+    "nothingDueTitle": "Nothing to review right now",
+    "nothingDueBody": "Words come back for review just before you'd forget them. You can still practise now.",
+    "practiseAnyway": "Practise anyway",
+    "noWordsTitle": "No words to practise yet",
+    "noWordsBody": "While reading, tap a marked word and choose “Save to my words”.",
+    "openLibrary": "Open my library"
   }
 }

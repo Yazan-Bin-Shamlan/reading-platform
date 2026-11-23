@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** A string trimmed to at most n characters (the model sometimes runs long; trim rather than reject). */
+const clip = (n: number) => z.string().transform((v) => v.trim().slice(0, n));
+
 export const termKinds = ["word", "phrase", "person", "place", "org", "event", "concept"] as const;
 export type TermKind = (typeof termKinds)[number];
 export const isEntity = (k: TermKind) => k === "person" || k === "place" || k === "org" || k === "event";
@@ -11,86 +14,80 @@ export const isEntity = (k: TermKind) => k === "person" || k === "place" || k ==
  */
 export const rawTermSchema = z.object({
   p: z.number().int().min(1),
-  text: z.string().min(1).max(120),
+  text: clip(120).pipe(z.string().min(1)),
   kind: z.enum(termKinds),
   /** 1 (common) … 5 (rare, specialist or classical). */
-  difficulty: z.number().int().min(1).max(5),
-  lemma: z.string().max(120).default(""),
-  pos: z.string().max(30).default(""),
-  ipa: z.string().max(80).default(""),
+  difficulty: z.number().transform((n) => Math.min(5, Math.max(1, Math.round(n)))),
+  lemma: clip(120).default(""),
+  pos: clip(30).default(""),
+  ipa: clip(80).default(""),
   /** Arabic for English documents; English for Arabic documents. */
-  translation: z.string().max(200).default(""),
+  translation: clip(200).default(""),
   /** Plain meaning in the document's language (easy English, or simple modern Arabic). */
-  simple: z.string().max(300).default(""),
+  simple: clip(300).default(""),
   /** Plain meaning in Arabic (English documents only). */
-  simpleAr: z.string().max(300).default(""),
+  simpleAr: clip(300).default(""),
   /** What it means in this exact sentence. */
-  context: z.string().max(400).default(""),
-  contextAr: z.string().max(400).default(""),
-  example: z.string().max(300).default(""),
+  context: clip(400).default(""),
+  contextAr: clip(400).default(""),
+  example: clip(300).default(""),
   /** People, places, organisations, events: canonical names for the encyclopedia lookup. */
-  nameEn: z.string().max(160).default(""),
-  nameAr: z.string().max(160).default(""),
+  nameEn: clip(160).default(""),
+  nameAr: clip(160).default(""),
   /** Why this paragraph mentions it, from the text alone. */
-  why: z.string().max(400).default(""),
-  whyAr: z.string().max(400).default(""),
+  why: clip(400).default(""),
+  whyAr: clip(400).default(""),
 });
 export type RawTerm = z.infer<typeof rawTermSchema>;
 
-export const pageAnalysisSchema = z.object({ terms: z.array(z.unknown()).max(60) });
+export const pageAnalysisSchema = z.object({ terms: z.array(z.unknown()).transform((t) => t.slice(0, 40)) });
 
 /** A term placed in the page text: characters [s, e). */
 export type Term = Omit<RawTerm, "p"> & { s: number; e: number };
 
 export const paragraphSchema = z.object({
-  summary: z.string().max(1500),
-  summaryAr: z.string().max(2000),
-  points: z.array(z.string().max(300)).max(4).default([]),
+  summary: clip(1500),
+  summaryAr: clip(2000),
+  points: z.array(clip(300)).default([]).transform((p) => p.slice(0, 4)),
 });
 export type ParagraphExplanation = z.infer<typeof paragraphSchema>;
 
 export const moreSchema = z.object({
-  more: z.string().max(1500),
-  moreAr: z.string().max(2000),
-  examples: z.array(z.string().max(300)).max(3).default([]),
+  more: clip(1500),
+  moreAr: clip(2000),
+  examples: z.array(clip(300)).default([]).transform((e) => e.slice(0, 3)),
 });
 export type MoreExplanation = z.infer<typeof moreSchema>;
 
 // ── JSON Schemas for structured output ─────────────────────────────────
-// Written by hand to stay within the subset Gemini's `responseJsonSchema`
-// supports (type, description, enum, items, maxItems, properties, required).
+// Kept minimal: Gemini rejects schemas with long descriptions, numeric
+// bounds or array caps ("too many states for serving"). The prompts carry
+// the guidance; zod (above) validates, and code clamps and trims.
 
-const str = (description: string) => ({ type: "string", description });
-
+const str = { type: "string" } as const;
 const termProperties = {
-  p: { type: "integer", description: "Paragraph number [n] the text is in" },
-  text: str("The exact words as they appear in that paragraph (same spelling, case and diacritics)"),
+  p: { type: "integer" },
+  text: str,
   kind: { type: "string", enum: [...termKinds] },
-  difficulty: { type: "integer", minimum: 1, maximum: 5, description: "1 common … 5 rare/specialist/classical" },
-  lemma: str("Dictionary form (singular, infinitive); for names, the name"),
-  pos: str("Part of speech, e.g. noun, verb, adjective, idiom; empty for names"),
-  ipa: str("IPA for English words, e.g. /ɪˈfɛm(ə)rəl/; empty otherwise"),
-  translation: str("Short translation (Arabic for English text, English for Arabic text)"),
-  simple: str("Plain meaning in at most 15 easy words, in the text's language"),
-  simpleAr: str("Plain meaning in simple Modern Standard Arabic (English text only)"),
-  context: str("What it means in this exact sentence, at most 20 words, in the text's language"),
-  contextAr: str("The same in simple Arabic (English text only)"),
-  example: str("One short new example sentence in the text's language"),
-  nameEn: str("People/places/organisations/events: full canonical English name for an encyclopedia search"),
-  nameAr: str("The same name in Arabic"),
-  why: str("People/places/organisations/events: why this paragraph mentions it, one sentence, from the text only"),
-  whyAr: str("The same in simple Arabic"),
+  difficulty: { type: "integer" },
+  lemma: str,
+  pos: str,
+  ipa: str,
+  translation: str,
+  simple: str,
+  simpleAr: str,
+  context: str,
+  contextAr: str,
+  example: str,
+  nameEn: str,
+  nameAr: str,
+  why: str,
+  whyAr: str,
 } as const;
 
 export const pageAnalysisJsonSchema = {
   type: "object",
-  properties: {
-    terms: {
-      type: "array",
-      maxItems: 30,
-      items: { type: "object", properties: termProperties, required: ["p", "text", "kind", "difficulty"] },
-    },
-  },
+  properties: { terms: { type: "array", items: { type: "object", properties: termProperties, required: ["p", "text", "kind", "difficulty"] } } },
   required: ["terms"],
 };
 
@@ -102,20 +99,12 @@ export const lookupJsonSchema = {
 
 export const paragraphJsonSchema = {
   type: "object",
-  properties: {
-    summary: str("What the passage says, in easy English (A2–B1), at most 80 words"),
-    summaryAr: str("The same in simple Modern Standard Arabic, at most 100 words"),
-    points: { type: "array", maxItems: 3, items: str("A key idea, one short sentence") },
-  },
+  properties: { summary: str, summaryAr: str, points: { type: "array", items: str } },
   required: ["summary", "summaryAr"],
 };
 
 export const moreJsonSchema = {
   type: "object",
-  properties: {
-    more: str("A fuller explanation in easy English, at most 100 words"),
-    moreAr: str("The same in simple Arabic, at most 120 words"),
-    examples: { type: "array", maxItems: 2, items: str("Another example sentence") },
-  },
+  properties: { more: str, moreAr: str, examples: { type: "array", items: str } },
   required: ["more", "moreAr"],
 };

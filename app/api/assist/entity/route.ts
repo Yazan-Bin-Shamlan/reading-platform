@@ -12,9 +12,11 @@ export async function GET(req: NextRequest) {
   const name = q.get("name")?.trim().slice(0, 160);
   const kind = KINDS.find((k) => k === q.get("kind"));
   const lang = q.get("lang") === "ar" ? "ar" : "en";
+  const altName = q.get("alt")?.trim().slice(0, 160);
+  const alt = altName ? { name: altName, lang: /[\u0600-\u06ff]/.test(altName) ? ("ar" as const) : ("en" as const) } : undefined;
   if (!name || !kind) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  const entity = await lookupEntity(name, kind, lang).catch((e) => {
+  const entity = await lookupEntity(name, kind, lang, alt).catch((e) => {
     if (!(e instanceof WikimediaBusyError)) console.error("Entity lookup failed", e);
     return e instanceof WikimediaBusyError ? ("busy" as const) : undefined;
   });

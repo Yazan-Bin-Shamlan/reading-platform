@@ -12,8 +12,8 @@ A calm, bilingual (Arabic + English) reading platform. Upload your own PDFs or o
 | 1 | Upload, Library, Original (PDF) reader, resume position | ✅ done |
 | 2 | Reading mode, highlights/notes/bookmarks, search, focus mode, shortcuts | ✅ done |
 | 3 | Smart Reading Assist | ✅ done |
-| 4 | My Words + flashcards + CSV/Anki export | next |
-| 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | |
+| 4 | My Words + flashcards + CSV/Anki export | ✅ done |
+| 5 | Explore: Gutendex, DOAB, OpenAlex, arXiv, ACO | next |
 | 6 | Daily sync, README completion, full test pass | |
 
 ## Tech stack
@@ -155,7 +155,8 @@ components/            ui/ (shadcn), shell/, auth/, providers/, upload/, library
 hooks/                 Client hooks (theme, page text, annotations, progress saving)
 i18n/                  Locale routing, navigation and message loading
 messages/              en.json, ar.json (UI text)
-lib/                   ai/ (provider interface, Gemini, demo, prompts, quota), assist/
+lib/                   words/ (flashcard scheduling, CSV/Anki export), ai/ (provider
+                       interface, Gemini, demo, prompts, quota), assist/
                        (placing and filtering marks), entities/ (Wikidata, Wikipedia),
                        auth, db (Prisma), supabase/, storage/, pdf/, upload/, library/,
                        text/ (reflow, extraction, search), reader/ (layout, prefs,
@@ -184,4 +185,5 @@ tests/                 Vitest tests
   - Facts about people, places, organisations and events come from Wikidata and Wikipedia, cached for 30 days. The AI only says why they're mentioned. When no confident match exists (exact name, right kind), the card says so instead of guessing.
   - All AI calls go through [`lib/ai/provider.ts`](lib/ai/provider.ts) (`analyzePage`, `explainTerm`, `explainMore`, `explainParagraph`), so another provider is one new file plus `AI_PROVIDER`.
   - A per-document switch keeps a document's text away from the AI entirely.
-- **AI quota**: the Gemini free-tier quota belongs to the Google project behind the API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share. Requests are queued and spaced, per-minute limits (HTTP 429) are retried with backoff, and a daily-limit error pauses Smart Assist until midnight Pacific, when Google resets the quota. Marks already made stay, and the reader shows "Smart Assist paused until tomorrow — reading still works."
+- **My Words** keeps each saved word with its translation, meaning and the sentence it came from. A link opens the book at that exact spot and flashes the word. Flashcards use a small SM-2 (the scheduling behind Anki): a word you know comes back after longer and longer gaps, one you forget comes back in ten minutes. Export as CSV (with a byte-order mark so Excel shows Arabic correctly) or as a file for Anki's **File → Import** (Basic notes, HTML, deck "Qiraa: My Words").
+- **AI quota**: the Gemini free-tier quota belongs to the Google project behind the API key and is shared by all users. `AiUsage` tracks project-wide use and `AiUserUsage` caps each person's daily share. Requests are queued and spaced. Per-minute limits (HTTP 429) and a busy model (503, which the free tier returns at peak times) are retried with backoff, and longer explanations fall back to the fast model when the stronger one is overloaded. A daily-limit error pauses Smart Assist until midnight Pacific, when Google resets the quota. Marks already made stay, and the reader shows "Smart Assist paused until tomorrow — reading still works."

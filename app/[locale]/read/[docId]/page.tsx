@@ -32,8 +32,13 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/read/[do
   return { title: doc?.title };
 }
 
-export default async function ReadPage({ params }: PageProps<"/[locale]/read/[docId]">) {
+export default async function ReadPage({ params, searchParams }: PageProps<"/[locale]/read/[docId]">) {
   const { locale, docId } = await params;
+  // ?p=page&s=start&e=end: open at that text (links from My Words).
+  const q = await searchParams;
+  const num = (v: string | string[] | undefined) => (typeof v === "string" && /^\d+$/.test(v) ? Number(v) : null);
+  const [jp, js, je] = [num(q.p), num(q.s), num(q.e)];
+  const jump = jp !== null && js !== null && je !== null && je > js ? { page: jp, start: js, end: je } : null;
   const user = await getUser();
   if (!user) redirect({ href: `/sign-in?next=/${locale}/read/${docId}`, locale });
 
@@ -83,6 +88,7 @@ export default async function ReadPage({ params }: PageProps<"/[locale]/read/[do
       initial={doc.progress ? { page: doc.progress.pageIndex, offset: (doc.progress.charOffset ?? 0) / 1000 } : null}
       initialPrefs={readPrefs(doc.user.preferences)}
       initialAnnotations={annotations}
+      jump={jump}
       assist={{
         settings: {
           enabled: profile.assistEnabled,

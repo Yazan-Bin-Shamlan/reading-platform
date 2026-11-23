@@ -5,6 +5,7 @@ import { BookmarkCheck, BookmarkPlus, Check, ExternalLink, Sparkles, Volume2 } f
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { speak } from "@/components/words/speak";
 import { isEntity, type MoreExplanation, type ParagraphExplanation, type Term } from "@/lib/ai/schemas";
 import type { ExplainLang } from "@/lib/assist/filter";
 import type { EntityInfo } from "@/lib/entities/wikidata";
@@ -17,7 +18,11 @@ export type CardTarget =
   | { mode: "paragraph"; text: string };
 
 type ExplainKind = "lookup" | "more" | "paragraph";
-type ExplainResponse<T> = { status: "ok" | "paused" | "limit" | "unavailable" | "off" | "empty" | "error"; result?: T; until?: string };
+type ExplainResponse<T> = {
+  status: "ok" | "paused" | "limit" | "unavailable" | "off" | "empty" | "aiBusy" | "error";
+  result?: T;
+  until?: string;
+};
 
 async function explain<T>(docId: string, kind: ExplainKind, text: string, context: string): Promise<ExplainResponse<T>> {
   const res = await fetch("/api/assist/explain", {
@@ -40,16 +45,6 @@ function useExplain<T>(docId: string, kind: ExplainKind, text: string, context: 
 
 const isArabic = (s: string) => /[؀-ۿ]/.test(s);
 
-/** Reads a word aloud with the browser's own speech (no cost, works offline on most systems). */
-function speak(text: string) {
-  if (typeof speechSynthesis === "undefined") return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = isArabic(text) ? "ar-SA" : "en-US";
-  u.rate = 0.9;
-  speechSynthesis.speak(u);
-}
-
 export function Shimmer({ lines = 3 }: { lines?: number }) {
   return (
     <div className="flex flex-col gap-2 py-1" aria-hidden>
@@ -63,7 +58,7 @@ export function Shimmer({ lines = 3 }: { lines?: number }) {
 function Problem({ status, until }: { status: string; until?: string }) {
   const t = useTranslations("assist");
   const time = until ? new Date(until).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "";
-  const key = ["paused", "limit", "unavailable", "off", "empty", "busy"].includes(status) ? status : "error";
+  const key = ["paused", "limit", "unavailable", "off", "empty", "busy", "aiBusy"].includes(status) ? status : "error";
   return <p className="text-sm text-muted-foreground">{t(`problem.${key}`, { time })}</p>;
 }
 
@@ -219,10 +214,11 @@ function EntityBody({ term, explainLang }: { term: Term; explainLang: ExplainLan
   const kind = term.kind as "person" | "place" | "org" | "event";
   const name = term.nameEn || term.text;
   const lang = term.nameEn ? "en" : isArabic(name) ? "ar" : "en";
+  const alt = term.nameAr && term.nameAr !== name ? term.nameAr : "";
   const q = useQuery({
-    queryKey: ["entity", kind, name, lang],
+    queryKey: ["entity", kind, name, lang, alt],
     queryFn: async () => {
-      const res = await fetch(`/api/assist/entity?${new URLSearchParams({ name, kind, lang })}`);
+      const res = await fetch(`/api/assist/entity?${new URLSearchParams({ name, kind, lang, alt })}`);
       return (await res.json().catch(() => ({ status: "error" }))) as { status: string; entity: EntityInfo | null };
     },
     staleTime: Infinity,
@@ -231,8 +227,8 @@ function EntityBody({ term, explainLang }: { term: Term; explainLang: ExplainLan
   const e = q.data?.entity;
   const showEn = explainLang !== "ar";
   const showAr = explainLang !== "en";
-  // Arabic documents explain in Arabic in `why` alone; English ones give both.
-  const why = (isArabic(term.why) ? [term.why] : [showEn ? term.why : "", showAr ? term.whyAr : ""]).filter(Boolean);
+  // English in `why`, Arabic in `whyAr`; if only one came back, show it whatever the setting.
+  const why = [showEn || !term.whyAr ? term.why : "", showAr || !term.why ? term.whyAr : ""].filter(Boolean);
   const readMore = e?.wikiUrlAr ?? e?.wikiUrlEn;
 
   return (

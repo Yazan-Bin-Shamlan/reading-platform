@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { AiQuotaError, nextReset, quotaDay } from "./limits";
+import { AiBusyError, AiQuotaError, nextReset, quotaDay } from "./limits";
 import { getProvider, type AiProvider, type Tier } from "./provider";
 
 // Free-tier quotas belong to the whole project (one API key), so they're
@@ -101,6 +101,12 @@ export async function runAi<T>(tier: Tier, userId: string, call: (ai: AiProvider
       await count(model, userId);
       return await queued(spacing, () => call(ai));
     } catch (e) {
+      // Per-minute limits and a busy model: back off and try again.
+      if (e instanceof AiBusyError) {
+        if (attempt >= RETRIES) throw e;
+        await sleep(2000 * 2 ** attempt);
+        continue;
+      }
       if (!(e instanceof AiQuotaError)) throw e;
       if (e.scope === "day") throw new AiPausedError(await pause(model));
       if (attempt >= RETRIES) throw e;

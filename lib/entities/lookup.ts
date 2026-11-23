@@ -95,7 +95,19 @@ async function summary(url: string | null): Promise<{ extract: string | null; im
  * confident match: the card then says so instead of guessing. Throws
  * WikimediaBusyError (nothing cached) when Wikimedia is limiting requests.
  */
-export async function lookupEntity(name: string, kind: EntityKind, lang: "en" | "ar"): Promise<EntityInfo | null> {
+export async function lookupEntity(
+  name: string,
+  kind: EntityKind,
+  lang: "en" | "ar",
+  /** Another spelling to try, e.g. the Arabic name when the English one doesn't match exactly. */
+  alt?: { name: string; lang: "en" | "ar" },
+): Promise<EntityInfo | null> {
+  const found = await lookupOne(name, kind, lang);
+  if (found || !alt?.name || alt.name === name) return found;
+  return lookupOne(alt.name, kind, alt.lang);
+}
+
+async function lookupOne(name: string, kind: EntityKind, lang: "en" | "ar"): Promise<EntityInfo | null> {
   const query = `${kind}:${name.trim().toLowerCase()}`.slice(0, 200);
   const cached = await db.entityLookup.findUnique({ where: { query_lang: { query, lang } }, include: { entity: true } });
   if (cached && cached.fetchedAt.getTime() > Date.now() - CACHE_DAYS * 86_400_000) {
