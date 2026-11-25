@@ -27,7 +27,11 @@ type TextTier = Exclude<Tier, "speech">;
 const THINKING: Record<TextTier, ThinkingLevel> = { fast: ThinkingLevel.MINIMAL, smart: ThinkingLevel.LOW };
 
 // A dense page can take Flash-Lite 10–20 s (it writes a lot); more when it's busy.
-const TIMEOUT_MS: Record<TextTier, number> = { fast: 60_000, smart: 25_000 };
+// The stronger model answers a passage in a few seconds when it isn't busy;
+// waiting longer only delays the fast model's answer.
+const TIMEOUT_MS: Record<TextTier, number> = { fast: 60_000, smart: 12_000 };
+/** After the stronger model is busy, go straight to the fast one for a while. */
+const SMART_COOLDOWN_MS = 5 * 60_000;
 // A 500-character passage takes about 4 s.
 const SPEECH_TIMEOUT_MS = 30_000;
 
@@ -67,13 +71,18 @@ export function createGemini(apiKey: string): AiProvider {
     return JSON.parse(res.text ?? "null");
   }
 
+  let smartBusyUntil = 0;
+
   async function json(tier: TextTier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
+    // It was busy a moment ago: don't make the reader wait for it to fail again.
+    if (tier === "smart" && Date.now() < smartBusyUntil) tier = "fast";
     try {
       return await call(tier, prompt, schema);
     } catch (e) {
       // The stronger model is often busy on the free tier (503) or slow (timeout):
       // answer with the fast one rather than not at all.
       if (tier === "smart" && isOverloaded(e)) {
+        smartBusyUntil = Date.now() + SMART_COOLDOWN_MS;
         try {
           return await call("fast", prompt, schema);
         } catch (e2) {

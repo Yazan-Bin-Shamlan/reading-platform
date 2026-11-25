@@ -56,6 +56,18 @@ import type { Anchor, Position, ViewHandle } from "./types";
 import { useSmartAssist, type AssistInitial } from "./use-smart-assist";
 import "./reader.css";
 
+/**
+ * Where the selection menu goes: next to the selection, or, when the selection
+ * is taller than half the screen, next to its last line on screen (where the
+ * drag usually ends), so the menu stays in view.
+ */
+function selectionAnchor(range: Range): DOMRect {
+  const all = range.getBoundingClientRect();
+  if (all.height < window.innerHeight / 2) return all;
+  const lines = [...range.getClientRects()].filter((r) => r.width > 0 && r.bottom > 0 && r.top < window.innerHeight);
+  return lines.at(-1) ?? all;
+}
+
 export type ReaderProps = {
   docId: string;
   title: string;
@@ -712,7 +724,7 @@ export function Reader(props: ReaderProps) {
       </div>
 
       {sel && !menu && (
-        <Floating anchor={() => sel.dom.getBoundingClientRect()} preferBelow={matchMedia("(pointer: coarse)").matches}>
+        <Floating anchor={() => selectionAnchor(sel.dom)} preferBelow={matchMedia("(pointer: coarse)").matches}>
           <AnnotationActions
             onColor={(c) => highlight(c)}
             onNote={() => highlight("yellow", true)}

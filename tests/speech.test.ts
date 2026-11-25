@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toWholeWords } from "@/lib/reader/annotations";
 import { aiPieces, chunks, langOf, rankVoices } from "@/lib/speech";
 
-const voice = (name: string, lang: string) => ({ name, lang, localService: true });
+const voice = (name: string, lang: string, localService = true) => ({ name, lang, localService });
 
 describe("voices", () => {
   // Names as macOS lists them in Chrome.
@@ -13,14 +13,15 @@ describe("voices", () => {
     voice("Ava (Premium)", "en-US"),
     voice("Daniel", "en-GB"),
     voice("Eddy (English (United States))", "en-US"),
-    voice("Google UK English Female", "en-GB"),
+    voice("Google UK English Female", "en-GB", false), // online in Chrome
     voice("Majed", "ar-001"),
     voice("Majed (Enhanced)", "ar-001"),
   ];
-  it("puts natural voices first and leaves out novelty ones", () => {
+  it("puts natural voices on the device first and leaves out novelty ones", () => {
     const en = rankVoices(voices, "en").map((v) => v.name);
-    expect(en[0]).toBe("Ava (Premium)");
-    expect(en[1]).toBe("Google UK English Female");
+    expect(en.slice(0, 3)).toEqual(["Ava (Premium)", "Samantha", "Daniel"]);
+    // Online voices can be slow or fail, so device voices come before them.
+    expect(en.indexOf("Google UK English Female")).toBeGreaterThan(en.indexOf("Daniel"));
     expect(en).not.toContain("Bubbles");
     expect(en.slice(-2)).toEqual(["Eddy (English (United States))", "Fred"]);
     expect(rankVoices(voices, "ar").map((v) => v.name)).toEqual(["Majed (Enhanced)", "Majed"]);

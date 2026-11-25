@@ -57,7 +57,9 @@ export function Floating({
         Math.max(MARGIN, rect.left + rect.width / 2 - width / 2),
         window.innerWidth - width - MARGIN,
       );
-      setPos({ top: Math.max(MARGIN, top), left, maxHeight });
+      // A selection taller than the screen leaves no room either side: keep the panel on screen anyway.
+      const lowest = window.innerHeight - shown - MARGIN;
+      setPos({ top: Math.max(MARGIN, Math.min(top, lowest)), left, maxHeight });
     };
     place();
     // Content that loads in (a card's details) changes the size: place it again.

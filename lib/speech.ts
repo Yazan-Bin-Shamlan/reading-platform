@@ -43,8 +43,11 @@ export function voiceScore(v: Pick<SpeechSynthesisVoice, "name" | "lang" | "loca
   if (/premium/i.test(v.name)) s += 5;
   if (/enhanced|neural|natural/i.test(v.name)) s += 4;
   if (/siri/i.test(v.name)) s += 3;
-  if (/^(google|microsoft)\b/i.test(v.name)) s += 3;
+  if (/^microsoft\b/i.test(v.name)) s += 3;
   if (ROBOTIC.test(v.name)) s -= 4;
+  // Voices on the device start at once and always work. Chrome's online
+  // "Google …" voices can take seconds to start and fail on longer text.
+  if (v.localService) s += 1;
   // The accents learners most often aim for, then the other main one.
   if (/^en-US$/i.test(v.lang) || /^ar-(SA|001)$/i.test(v.lang)) s += 1;
   else if (/^en-GB$/i.test(v.lang)) s += 0.5;
@@ -155,6 +158,12 @@ function voiceFor(lang: SpeechLang): SpeechSynthesisVoice | undefined {
   return (chosen && voices.find((v) => v.voiceURI === chosen)) || rankVoices(voices, lang)[0];
 }
 
+/** The best voice installed on the device, for when an online one fails. */
+const localVoiceFor = (lang: SpeechLang) => rankVoices(readVoices().filter((v) => v.localService), lang)[0];
+
+/** How long an online voice may take to start before a device voice takes over. */
+const START_TIMEOUT_MS = 4000;
+
 // ── Speaking ──────────────────────────────────────────────────────────────────
 
 export type SpeechState = { key: string; loading: boolean } | null;
@@ -186,15 +195,39 @@ function speakDevice(text: string, key: string, lang: SpeechLang, id: number, vo
   const pieces = chunks(text);
   if (!pieces.length) return setState(null);
   const voice = (voiceURI && readVoices().find((v) => v.voiceURI === voiceURI)) || voiceFor(lang);
+  setState({ key, loading: false });
+  // Chrome may drop speech queued in the same moment as the cancel() before it.
+  setTimeout(() => id === run && queueUtterances(pieces, voice, lang, id), 60);
+}
+
+function queueUtterances(pieces: string[], voice: SpeechSynthesisVoice | undefined, lang: SpeechLang, id: number) {
+  const online = voice ? !voice.localService : false;
+  let started = false;
+  let switched = false;
+  // An online voice that fails or never starts: read the rest with one on the device.
+  const switchFrom = (i: number) => {
+    if (switched || id !== run) return;
+    switched = true;
+    const local = localVoiceFor(lang);
+    speechSynthesis.cancel();
+    setTimeout(() => id === run && queueUtterances(pieces.slice(i), local, lang, id), 60);
+  };
   pieces.forEach((piece, i) => {
     const u = new SpeechSynthesisUtterance(piece);
     if (voice) u.voice = voice;
     u.lang = voice?.lang ?? (lang === "ar" ? "ar-SA" : "en-US");
     u.rate = readPrefs().rate;
-    if (i === pieces.length - 1) u.onend = u.onerror = () => id === run && setState(null);
+    u.onstart = () => (started = true);
+    u.onerror = (e) => {
+      // Cancelled on purpose (Stop, a new passage, or switching voices): nothing to do.
+      if (e.error === "interrupted" || e.error === "canceled" || id !== run) return;
+      if (online && !switched) return switchFrom(i);
+      if (i === pieces.length - 1) setState(null);
+    };
+    if (i === pieces.length - 1) u.onend = () => id === run && !switched && setState(null);
     speechSynthesis.speak(u);
   });
-  setState({ key, loading: false });
+  if (online) setTimeout(() => !started && switchFrom(0), START_TIMEOUT_MS);
 }
 
 class FallbackError extends Error {}
