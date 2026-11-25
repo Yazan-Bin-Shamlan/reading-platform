@@ -18,4 +18,6 @@ export const keys = {
   incoming: (userId: string, id: string) => `incoming/${userId}/${id}.pdf`,
   content: (sha256: string) => `content/${sha256}.pdf`,
   cover: (sha256: string) => `covers/${sha256}.jpg`,
+  /** AI speech, once per model + voice + text. */
+  speech: (sha256: string) => `speech/${sha256}.wav`,
 };

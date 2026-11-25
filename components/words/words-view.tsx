@@ -16,7 +16,7 @@ import { Link } from "@/i18n/navigation";
 import { fold } from "@/lib/text/search";
 import type { WordItem } from "@/lib/words/queries";
 import { cn } from "@/lib/utils";
-import { speak } from "./speak";
+import { speak } from "@/lib/speech";
 
 const UNDO_MS = 5000;
 

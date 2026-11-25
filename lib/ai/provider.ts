@@ -3,8 +3,8 @@ import { isLocalMode } from "@/lib/mode";
 import type { DocLang } from "./prompts";
 import type { MoreExplanation, ParagraphExplanation, RawTerm } from "./schemas";
 
-/** Which model a call uses: fast for page analysis and lookups, smart for longer explanations. */
-export type Tier = "fast" | "smart";
+/** Which model a call uses: fast for page analysis and lookups, smart for longer explanations, speech for reading aloud. */
+export type Tier = "fast" | "smart" | "speech";
 
 /**
  * Every AI call goes through this interface, so another provider can be
@@ -18,6 +18,8 @@ export interface AiProvider {
   explainTerm(lang: DocLang, text: string, context: string): Promise<RawTerm | null>;
   explainMore(lang: DocLang, text: string, context: string): Promise<MoreExplanation>;
   explainParagraph(lang: DocLang, text: string): Promise<ParagraphExplanation>;
+  /** Reads `text` aloud in one of lib/ai/voices.ts's voices: WAV audio. Optional; without it, devices use their own voices. */
+  speak?(text: string, voice: string): Promise<Uint8Array>;
 }
 
 export { AiQuotaError } from "./limits";

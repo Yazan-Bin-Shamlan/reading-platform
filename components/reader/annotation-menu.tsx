@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, NotebookPen, Sparkles, Trash2 } from "lucide-react";
+import { Check, Copy, Loader2, NotebookPen, Sparkles, Square, Trash2, Volume2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { highlightColors, type HighlightColor } from "@/lib/reader/annotations";
 import { TOP_INSET } from "@/lib/reader/scroll";
+import { canSpeak, speak, stopSpeaking, useSpeaking, useSpeechLoading } from "@/lib/speech";
 import { cn } from "@/lib/utils";
 
 const MARGIN = 8;
@@ -123,7 +124,7 @@ function MenuButton({ label, onClick, children }: { label: string; onClick: () =
   );
 }
 
-/** Colours, note, copy (and delete for an existing highlight). */
+/** Colours, note, listen, copy (and delete for an existing highlight). */
 export function AnnotationActions({
   current,
   onColor,
@@ -131,6 +132,7 @@ export function AnnotationActions({
   onCopy,
   onDelete,
   onExplain,
+  listen,
 }: {
   current?: HighlightColor | null;
   onColor: (c: HighlightColor) => void;
@@ -139,8 +141,13 @@ export function AnnotationActions({
   onDelete?: () => void;
   /** Smart Assist: explain the selected word or passage. */
   onExplain?: () => void;
+  /** Read the text aloud; `key` names it, so the button turns into Stop while it plays. */
+  listen?: { key: string; text: () => string };
 }) {
   const t = useTranslations("notes");
+  const speaking = useSpeaking();
+  const playing = listen && speaking === listen.key;
+  const preparing = useSpeechLoading(listen?.key ?? "");
   return (
     <div className="flex items-center gap-0.5">
       {onExplain && (
@@ -173,6 +180,14 @@ export function AnnotationActions({
       <MenuButton label={t("addNote")} onClick={onNote}>
         <NotebookPen aria-hidden />
       </MenuButton>
+      {listen && canSpeak() && (
+        <MenuButton
+          label={preparing ? t("preparingVoice") : playing ? t("stopListening") : t("listen")}
+          onClick={() => (playing ? stopSpeaking() : speak(listen.text(), { key: listen.key }))}
+        >
+          {preparing ? <Loader2 aria-hidden className="animate-spin" /> : playing ? <Square aria-hidden /> : <Volume2 aria-hidden />}
+        </MenuButton>
+      )}
       <MenuButton label={t("copy")} onClick={onCopy}>
         <Copy aria-hidden />
       </MenuButton>

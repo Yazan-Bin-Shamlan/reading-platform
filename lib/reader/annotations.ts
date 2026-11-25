@@ -21,6 +21,17 @@ export type Annotation = {
 /** A span of text: from `start` on `page` to `end` on `endPage`. */
 export type TextRange = { page: number; start: number; endPage: number; end: number };
 
+const WORD_CHAR = /[\p{L}\p{M}\p{N}'’-]/u;
+const inWord = (text: string, at: number) => WORD_CHAR.test(text[at - 1] ?? "") && WORD_CHAR.test(text[at] ?? "");
+
+/** A range that starts or ends mid-word, widened to whole words (for reading a selection aloud). */
+export function toWholeWords(r: TextRange, startText: string, endText: string): TextRange {
+  let { start, end } = r;
+  while (start > 0 && inWord(startText, start)) start--;
+  while (end < endText.length && inWord(endText, end)) end++;
+  return { ...r, start, end };
+}
+
 export const createAnnotationSchema = z
   .object({
     kind: z.enum(["highlight", "note", "bookmark"]),

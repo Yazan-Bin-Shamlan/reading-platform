@@ -5,7 +5,7 @@ import { BookmarkCheck, BookmarkPlus, Check, ExternalLink, Sparkles, Volume2 } f
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { speak } from "@/components/words/speak";
+import { canSpeak, speak } from "@/lib/speech";
 import { isEntity, type MoreExplanation, type ParagraphExplanation, type Term } from "@/lib/ai/schemas";
 import type { ExplainLang } from "@/lib/assist/filter";
 import type { EntityInfo } from "@/lib/entities/wikidata";
@@ -93,7 +93,7 @@ function Header({ text, sub, audio = true }: { text: string; sub?: string; audio
           </p>
         )}
       </div>
-      {audio && typeof window !== "undefined" && "speechSynthesis" in window && (
+      {audio && canSpeak() && (
         <Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label={t("listen")} onClick={() => speak(text)}>
           <Volume2 aria-hidden />
         </Button>

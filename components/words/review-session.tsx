@@ -11,7 +11,7 @@ import { Link } from "@/i18n/navigation";
 import type { WordItem } from "@/lib/words/queries";
 import { grades, preview, type Grade } from "@/lib/words/srs";
 import { cn } from "@/lib/utils";
-import { speak } from "./speak";
+import { speak } from "@/lib/speech";
 import { Sentence, sourceHref } from "./words-view";
 
 const GRADE_STYLE: Record<Grade, string> = {

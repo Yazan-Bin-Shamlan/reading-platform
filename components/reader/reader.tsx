@@ -29,6 +29,7 @@ import {
   highlightColors,
   onPage,
   rangeOf,
+  toWholeWords,
   type Annotation,
   type HighlightColor,
   type TextRange,
@@ -37,6 +38,7 @@ import { fileSlug, notesToMarkdown } from "@/lib/reader/export";
 import { paint } from "@/lib/reader/paint";
 import type { ReaderPrefs } from "@/lib/reader/prefs";
 import { isProgrammaticScroll } from "@/lib/reader/scroll";
+import { stopSpeaking, useSpeaking } from "@/lib/speech";
 import { chapterEnd, minutesLeft, WPM } from "@/lib/reader/time-left";
 import type { Hit } from "@/lib/text/search";
 import { cn } from "@/lib/utils";
@@ -170,6 +172,9 @@ export function Reader(props: ReaderProps) {
   const smart = useSmartAssist({ docId, getView, current, language, hasText, paintTick, initial: props.assist });
   const [levelLater, setLevelLater] = useState(false);
   const [pauseSeen, setPauseSeen] = useState(false);
+  const speaking = useSpeaking();
+  // Reading aloud stops when the book closes.
+  useEffect(() => stopSpeaking, []);
 
   useEffect(() => {
     if (jump) {
@@ -551,6 +556,7 @@ export function Reader(props: ReaderProps) {
           break;
         case "Escape":
           if (smart.card) smart.setCard(null);
+          else if (speaking) stopSpeaking();
           else if (sel) clearSelection();
           else if (focus) toggleFocus();
           else return;
@@ -562,7 +568,7 @@ export function Reader(props: ReaderProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [docRtl, step, toggleFocus, theme, setTheme, toggleBookmark, switchMode, mode, setPrefs, prefs.size, zoomBy, sel, focus, smart]);
+  }, [docRtl, step, toggleFocus, theme, setTheme, toggleBookmark, switchMode, mode, setPrefs, prefs.size, zoomBy, sel, focus, smart, speaking]);
 
   // ── Time left ──────────────────────────────────────────────────────
   const wpm = language === "ar" ? WPM.ar : WPM.en;
@@ -723,6 +729,13 @@ export function Reader(props: ReaderProps) {
               copy(quoteOf(sel.range).quote);
               clearSelection();
             }}
+            listen={{
+              key: "selection",
+              text: () => {
+                const page = (i: number) => view.current?.pageText(i) ?? "";
+                return quoteOf(toWholeWords(sel.range, page(sel.range.page), page(sel.range.endPage))).quote;
+              },
+            }}
           />
         </Floating>
       )}
@@ -758,6 +771,7 @@ export function Reader(props: ReaderProps) {
                 remove(menuAnnotation, tn("highlightDeleted"));
                 setMenu(null);
               }}
+              listen={menuAnnotation.quote ? { key: `highlight:${menuAnnotation.id}`, text: () => menuAnnotation.quote ?? "" } : undefined}
             />
           )}
         </Floating>

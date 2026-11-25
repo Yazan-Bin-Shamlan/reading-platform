@@ -11,6 +11,7 @@ const num = (v: string | undefined, d: number) => (v && Number.isFinite(Number(v
 const DAILY_LIMIT: Record<Tier, number> = {
   fast: num(process.env.AI_DAILY_LIMIT_FAST, 1000),
   smart: num(process.env.AI_DAILY_LIMIT_SMART, 200),
+  speech: num(process.env.AI_DAILY_LIMIT_SPEECH, 100),
 };
 const USER_DAILY_LIMIT = num(process.env.AI_USER_DAILY_LIMIT, 300);
 /** Spacing between requests from one server instance (4 s ≈ 15 a minute). */
@@ -61,19 +62,22 @@ async function count(model: string, userId: string) {
   ]);
 }
 
-// One request at a time per server instance, spaced out for per-minute limits.
-let chain: Promise<unknown> = Promise.resolve();
-let lastStart = 0;
+// One request at a time per model and server instance, spaced out for
+// per-minute limits (which Google counts per model). Reading aloud has its own
+// queue, so it never waits behind Smart Assist's page analysis.
+const queues = new Map<string, { chain: Promise<unknown>; lastStart: number }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-function queued<T>(spacing: number, fn: () => Promise<T>): Promise<T> {
-  const run = chain.then(async () => {
-    const wait = lastStart + spacing - Date.now();
+function queued<T>(model: string, spacing: number, fn: () => Promise<T>): Promise<T> {
+  const q = queues.get(model) ?? { chain: Promise.resolve(), lastStart: 0 };
+  queues.set(model, q);
+  const run = q.chain.then(async () => {
+    const wait = q.lastStart + spacing - Date.now();
     if (wait > 0) await sleep(wait);
-    lastStart = Date.now();
+    q.lastStart = Date.now();
     return fn();
   });
-  chain = run.catch(() => {});
+  q.chain = run.catch(() => {});
   return run;
 }
 
@@ -99,7 +103,7 @@ export async function runAi<T>(tier: Tier, userId: string, call: (ai: AiProvider
   for (let attempt = 0; ; attempt++) {
     try {
       await count(model, userId);
-      return await queued(spacing, () => call(ai));
+      return await queued(model, spacing, () => call(ai));
     } catch (e) {
       // Per-minute limits and a busy model: back off and try again.
       if (e instanceof AiBusyError) {

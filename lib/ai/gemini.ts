@@ -15,17 +15,21 @@ import {
   type RawTerm,
 } from "./schemas";
 
-// Stable models on the free tier (checked 2026-11-23); override with env.
+// Models on the free tier (checked 2026-11-23; speech 2026-11-25); override with env.
 const MODELS: Record<Tier, string> = {
   fast: process.env.GEMINI_MODEL_FAST || "gemini-3.5-flash-lite",
   smart: process.env.GEMINI_MODEL_SMART || "gemini-3.8-flash",
+  speech: process.env.GEMINI_MODEL_SPEECH || "gemini-3.8-flash-lite-tts",
 };
+type TextTier = Exclude<Tier, "speech">;
 
 // Keep thinking short: it adds latency and tokens. Gemini 3.8 Flash's lowest level is LOW.
-const THINKING: Record<Tier, ThinkingLevel> = { fast: ThinkingLevel.MINIMAL, smart: ThinkingLevel.LOW };
+const THINKING: Record<TextTier, ThinkingLevel> = { fast: ThinkingLevel.MINIMAL, smart: ThinkingLevel.LOW };
 
 // A dense page can take Flash-Lite 10–20 s (it writes a lot); more when it's busy.
-const TIMEOUT_MS: Record<Tier, number> = { fast: 60_000, smart: 25_000 };
+const TIMEOUT_MS: Record<TextTier, number> = { fast: 60_000, smart: 25_000 };
+// A 500-character passage takes about 4 s.
+const SPEECH_TIMEOUT_MS = 30_000;
 
 /** Busy or too slow: worth trying another model. */
 const isOverloaded = (e: unknown) =>
@@ -36,10 +40,20 @@ const isOverloaded = (e: unknown) =>
 const asQuotaError = (e: unknown) =>
   (e instanceof ApiError && quotaErrorFrom(e.status, e.message ?? "")) || (isOverloaded(e) ? new AiBusyError() : e);
 
+/** The same for the Interactions API (speech), whose errors are another class with a numeric `status`. */
+function asSpeechError(e: unknown) {
+  const status = typeof e === "object" && e && "status" in e && typeof e.status === "number" ? e.status : 0;
+  const message = e instanceof Error ? e.message : String(e);
+  if (status === 503 || status === 504 || /timed? ?out|abort|deadline/i.test(message)) return new AiBusyError();
+  return quotaErrorFrom(status, message) ?? e;
+}
+
 export function createGemini(apiKey: string): AiProvider {
   const ai = new GoogleGenAI({ apiKey });
+  // Speech uses the Interactions API, which is on v1beta.
+  const speechAi = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: "v1beta" } });
 
-  async function call(tier: Tier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
+  async function call(tier: TextTier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
     const model = MODELS[tier];
     const config: GenerateContentConfig = {
       systemInstruction: prompt.system,
@@ -53,7 +67,7 @@ export function createGemini(apiKey: string): AiProvider {
     return JSON.parse(res.text ?? "null");
   }
 
-  async function json(tier: Tier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
+  async function json(tier: TextTier, prompt: { system: string; user: string }, schema: object): Promise<unknown> {
     try {
       return await call(tier, prompt, schema);
     } catch (e) {
@@ -90,6 +104,26 @@ export function createGemini(apiKey: string): AiProvider {
     },
     async explainParagraph(lang, text) {
       return paragraphSchema.parse(await json("smart", paragraphPrompt(lang, text), paragraphJsonSchema));
+    },
+    async speak(text, voice) {
+      try {
+        const res = await speechAi.interactions.create(
+          {
+            model: MODELS.speech,
+            // The text is read as a verbatim transcript; the language is detected from it.
+            input: [{ type: "user_input", content: [{ type: "text", text }] }],
+            response_format: { type: "audio" },
+            generation_config: { speech_config: [{ voice }] },
+          },
+          // Our own queue handles retries, so a daily limit can pause it instead.
+          { timeout_ms: SPEECH_TIMEOUT_MS, retries: { strategy: "none" } },
+        );
+        const data = res.output_audio?.data;
+        if (!data) throw new Error("No audio in the speech response");
+        return new Uint8Array(Buffer.from(data, "base64"));
+      } catch (e) {
+        throw asSpeechError(e);
+      }
     },
   };
 }

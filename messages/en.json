@@ -329,7 +329,10 @@
     "pageN": "Page {page}",
     "bookmark": "Bookmark",
     "fileSuffix": "notes",
-    "explain": "Explain"
+    "explain": "Explain",
+    "listen": "Listen",
+    "stopListening": "Stop reading",
+    "preparingVoice": "Preparing the voice…"
   },
   "search": {
     "label": "Search in this document",
@@ -454,5 +457,60 @@
     "noWordsTitle": "No words to practise yet",
     "noWordsBody": "While reading, tap a marked word and choose “Save to my words”.",
     "openLibrary": "Open my library"
+  },
+  "speech": {
+    "title": "Pronunciation",
+    "english": "English voice",
+    "arabic": "Arabic voice",
+    "auto": "Best available ({name})",
+    "autoNone": "Best available",
+    "none": "No {language} on this device.",
+    "speed": "Speed",
+    "test": "Play a sample",
+    "stop": "Stop",
+    "sampleEn": "Reading opens the door to new worlds.",
+    "sampleAr": "القراءة تفتح الأبواب إلى عوالم جديدة.",
+    "hint": "Want a more natural voice? Add one to your device, then choose it here. On a Mac: System Settings → Accessibility → Read & Speak → System voice → Manage Voices, and pick an \"Enhanced\" or \"Premium\" voice. On Windows: Settings → Time & language → Speech. Your choice is kept on this device.",
+    "unsupported": "This browser can't read text aloud.",
+    "engine": "Voice type",
+    "engineDevice": "Device voice",
+    "engineAi": "AI voice",
+    "engineDeviceHint": "Free and instant, using the voices on this device.",
+    "engineAiHint": "More natural, by Gemini, in English and Arabic. It takes a few seconds to start and uses the shared daily AI allowance; when that runs out, the device voice reads instead.",
+    "aiVoice": "AI voice",
+    "aiUnavailable": "The AI voice isn't set up on this server (it needs a Gemini API key), so the device voice is used.",
+    "deviceVoices": "Device voices (used when the AI voice isn't available)",
+    "loading": "Preparing the voice…",
+    "fallback": {
+      "limit": "You've used today's AI allowance, so your device voice is reading instead.",
+      "paused": "The AI voice is paused until tomorrow (the daily limit was reached), so your device voice is reading instead.",
+      "aiBusy": "The AI voice is busy right now, so your device voice is reading instead.",
+      "unavailable": "The AI voice isn't available, so your device voice is reading instead.",
+      "error": "The AI voice didn't respond, so your device voice is reading instead."
+    },
+    "styles": {
+      "bright": "Bright",
+      "upbeat": "Upbeat",
+      "informative": "Informative",
+      "firm": "Firm",
+      "excitable": "Excitable",
+      "youthful": "Youthful",
+      "breezy": "Breezy",
+      "easyGoing": "Easy-going",
+      "breathy": "Breathy",
+      "clear": "Clear",
+      "smooth": "Smooth",
+      "gravelly": "Gravelly",
+      "soft": "Soft",
+      "even": "Even",
+      "mature": "Mature",
+      "forward": "Forward",
+      "friendly": "Friendly",
+      "casual": "Casual",
+      "gentle": "Gentle",
+      "lively": "Lively",
+      "knowledgeable": "Knowledgeable",
+      "warm": "Warm"
+    }
   }
 }

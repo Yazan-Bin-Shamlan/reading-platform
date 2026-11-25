@@ -11,17 +11,20 @@ export function supabaseStorage(url: string, secretKey: string): StorageDriver {
   });
   const bucket = () => client.storage.from(BUCKET);
 
-  // Create the private bucket on first use, so setup needs no dashboard clicks.
+  // Create the private bucket on first use, so setup needs no dashboard clicks;
+  // a bucket made before a file type was added gets that type too.
   let ready: Promise<void> | null = null;
+  const options = { public: false, fileSizeLimit: MAX_UPLOAD_BYTES, allowedMimeTypes: ["application/pdf", "image/jpeg", "audio/wav"] };
   const ensureBucket = () =>
     (ready ??= (async () => {
       const { data } = await client.storage.getBucket(BUCKET);
-      if (data) return;
-      const { error } = await client.storage.createBucket(BUCKET, {
-        public: false,
-        fileSizeLimit: MAX_UPLOAD_BYTES,
-        allowedMimeTypes: ["application/pdf", "image/jpeg"],
-      });
+      if (data) {
+        if (!options.allowedMimeTypes.every((t) => data.allowed_mime_types?.includes(t))) {
+          await client.storage.updateBucket(BUCKET, options);
+        }
+        return;
+      }
+      const { error } = await client.storage.createBucket(BUCKET, options);
       if (error && !/already exists/i.test(error.message)) {
         ready = null;
         throw error;
