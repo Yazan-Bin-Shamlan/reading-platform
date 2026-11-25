@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BookCover } from "@/components/library/book-cover";
 import { Link } from "@/i18n/navigation";
+import { backupCoverUrl } from "@/lib/sources/covers";
 import { licenseLabel } from "@/lib/sources/license";
 import type { CatalogRecord } from "@/lib/sources/types";
 import { cn, joinNames } from "@/lib/utils";
@@ -37,7 +38,7 @@ export function ItemCard({ item, layout = "grid" }: { item: ExploreItem; layout?
       )}
     >
       <div className="relative">
-        <BookCover title={item.title} coverUrl={item.coverUrl} className="transition-transform group-hover:-translate-y-0.5" />
+        <BookCover title={item.title} coverUrl={item.coverUrl} backupUrl={backupCoverUrl(item)} className="transition-transform group-hover:-translate-y-0.5" />
         {item.docId && (
           <span className="absolute end-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[0.7rem] font-medium shadow-sm">
             <Check aria-hidden className="size-3 text-brand" />

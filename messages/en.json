@@ -511,6 +511,9 @@
       "lively": "Lively",
       "knowledgeable": "Knowledgeable",
       "warm": "Warm"
-    }
+    },
+    "readerLabel": "Read-aloud voice",
+    "voice": "Voice",
+    "more": "More voice settings"
   }
 }

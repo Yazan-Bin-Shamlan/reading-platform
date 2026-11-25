@@ -156,6 +156,7 @@ export function LibraryView({ docs }: { docs: LibraryDoc[] }) {
                 <BookCover
                   title={d.title}
                   coverUrl={d.coverUrl}
+                  backupUrl={d.backupCoverUrl}
                   className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md"
                 />
                 <p className="mt-3 line-clamp-2 text-sm leading-snug font-medium">
@@ -179,7 +180,7 @@ export function LibraryView({ docs }: { docs: LibraryDoc[] }) {
           {shown.map((d) => (
             <li key={d.id} className="relative flex items-center gap-4 p-3 pe-12">
               <Link href={`/read/${d.id}`} className="flex min-w-0 flex-1 items-center gap-4 rounded-md">
-                <BookCover title={d.title} coverUrl={d.coverUrl} className="w-12 shrink-0 rounded-md" />
+                <BookCover title={d.title} coverUrl={d.coverUrl} backupUrl={d.backupCoverUrl} className="w-12 shrink-0 rounded-md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
                     <bdi>{d.title}</bdi>

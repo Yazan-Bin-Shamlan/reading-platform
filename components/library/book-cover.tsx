@@ -3,23 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/** Cover image, or a calm typographic stand-in when a PDF has none (or its source's image fails). */
+/**
+ * Cover image, or a calm typographic stand-in when a PDF has none. When the
+ * source's image fails to load, the backup (an Open Library cover) is tried next.
+ */
 export function BookCover({
   title,
   coverUrl,
+  backupUrl,
   className,
   sizes = "small",
 }: {
   title: string;
   coverUrl: string | null;
+  /** From backupCoverUrl (lib/sources/covers.ts). */
+  backupUrl?: string | null;
   className?: string;
   sizes?: "small" | "large";
 }) {
-  const [failed, setFailed] = useState(false);
+  const urls = [coverUrl, backupUrl && (sizes === "large" ? `${backupUrl}&size=L` : backupUrl)].filter((u): u is string => Boolean(u));
+  const [tried, setTried] = useState(0);
+  const src = urls[tried];
   const img = useRef<HTMLImageElement>(null);
   // An image that failed before hydration never fires onError.
   useEffect(() => {
-    if (img.current?.complete && img.current.naturalWidth === 0) setFailed(true);
+    if (img.current?.complete && img.current.naturalWidth === 0) setTried(1);
   }, []);
   return (
     <div
@@ -28,9 +36,17 @@ export function BookCover({
         className,
       )}
     >
-      {coverUrl && !failed ? (
-        // eslint-disable-next-line @next/next/no-img-element -- signed storage URL
-        <img ref={img} src={coverUrl} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover object-top" />
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- signed storage URL or a source's own image
+        <img
+          key={src}
+          ref={img}
+          src={src}
+          alt=""
+          loading="lazy"
+          onError={() => setTried((n) => n + 1)}
+          className="size-full object-cover object-top"
+        />
       ) : (
         <div className="flex size-full items-end bg-gradient-to-br from-secondary to-accent p-3">
           <p

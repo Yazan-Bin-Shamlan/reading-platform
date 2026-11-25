@@ -62,7 +62,7 @@ export default async function HomePage() {
             {rest.map((d) => (
               <li key={d.id} className="w-32 shrink-0 snap-start sm:w-36">
                 <Link href={`/read/${d.id}`} className="group block rounded-lg">
-                  <BookCover title={d.title} coverUrl={d.coverUrl} className="transition-transform group-hover:-translate-y-0.5" />
+                  <BookCover title={d.title} coverUrl={d.coverUrl} backupUrl={d.backupCoverUrl} className="transition-transform group-hover:-translate-y-0.5" />
                   <p className="mt-2 line-clamp-2 text-sm leading-snug font-medium">
                     <bdi>{d.title}</bdi>
                   </p>
@@ -83,7 +83,7 @@ async function ContinueCard({ doc, label }: { doc: LibraryDoc; label: string }) 
       href={`/read/${doc.id}`}
       className="group flex items-center gap-5 rounded-3xl border bg-card p-4 transition-shadow hover:shadow-md sm:gap-8 sm:p-6"
     >
-      <BookCover title={doc.title} coverUrl={doc.coverUrl} sizes="large" className="w-24 shrink-0 sm:w-32" />
+      <BookCover title={doc.title} coverUrl={doc.coverUrl} backupUrl={doc.backupCoverUrl} sizes="large" className="w-24 shrink-0 sm:w-32" />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium tracking-wide text-brand uppercase">{label}</p>
         <p className="mt-1.5 line-clamp-2 font-serif text-xl leading-snug font-semibold sm:text-2xl">

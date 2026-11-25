@@ -54,6 +54,7 @@ import { ShortcutsDialog } from "./shortcuts-dialog";
 import { TocPanel } from "./toc-panel";
 import type { Anchor, Position, ViewHandle } from "./types";
 import { useSmartAssist, type AssistInitial } from "./use-smart-assist";
+import { VoiceMenu } from "./voice-menu";
 import "./reader.css";
 
 /**
@@ -85,6 +86,8 @@ export type ReaderProps = {
   initialPrefs: ReaderPrefs;
   initialAnnotations: Annotation[];
   assist: AssistInitial;
+  /** Whether the AI voice is set up on this server (the voice menu offers it). */
+  aiSpeech: boolean;
   /** Open at this text and flash it (links from My Words). */
   jump?: { page: number; start: number; end: number } | null;
 };
@@ -626,7 +629,9 @@ export function Reader(props: ReaderProps) {
           <IconButton label={`${t("contents")} (C)`} onClick={() => setPanel("toc")}>
             <ListTree aria-hidden />
           </IconButton>
-          <h1 dir="auto" className="min-w-0 flex-1 truncate px-1 text-sm font-medium sm:text-center">
+          {/* On a phone the buttons need the room: the title is kept for screen readers only. */}
+          <div aria-hidden className="flex-1 sm:hidden" />
+          <h1 dir="auto" className="min-w-0 flex-1 truncate px-1 text-sm font-medium max-sm:sr-only sm:text-center">
             {title}
           </h1>
           <IconButton label={`${t("search")} (/)`} onClick={() => setPanel(panel === "search" ? null : "search")}>
@@ -655,6 +660,7 @@ export function Reader(props: ReaderProps) {
             />
           )}
           {fileUrl && <ModeSwitch mode={mode} hasText={hasText} onChange={switchMode} />}
+          <VoiceMenu aiAvailable={props.aiSpeech} lang={language ?? (uiRtl ? "ar" : "en")} />
           <ReaderSettings mode={mode} prefs={prefs} onPrefs={setPrefs} zoom={zoom} onZoom={setZoom} />
         </div>
         {mode === "reading" && textStatus === "garbled" && (

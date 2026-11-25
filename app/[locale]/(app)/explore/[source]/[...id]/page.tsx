@@ -10,6 +10,7 @@ import { getUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getRecord, saveRecord } from "@/lib/sources";
 import { ARXIV_THANKS } from "@/lib/sources/arxiv";
+import { backupCoverUrl } from "@/lib/sources/covers";
 import { licenseLabel } from "@/lib/sources/license";
 import { sourceIds, type SourceId } from "@/lib/sources/types";
 import { joinNames } from "@/lib/utils";
@@ -57,7 +58,7 @@ export default async function ExploreItemPage({ params }: PageProps<"/[locale]/e
         {t("title")}
       </Link>
       <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
-        <BookCover title={record.title} coverUrl={record.coverUrl} sizes="large" className="w-40 shrink-0 self-start sm:w-48" />
+        <BookCover title={record.title} coverUrl={record.coverUrl} backupUrl={backupCoverUrl(record)} sizes="large" className="w-40 shrink-0 self-start sm:w-48" />
         <div className="flex min-w-0 flex-col gap-3">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             {[typeLabel, t(`languages.${record.language}`), record.year].filter(Boolean).join(" · ")}

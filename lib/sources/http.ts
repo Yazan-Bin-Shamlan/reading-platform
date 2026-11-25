@@ -22,6 +22,8 @@ const SPACING: Record<string, number> = {
   "mc.dlib.nyu.edu": 300,
   "archive.org": 500,
   "www.ebi.ac.uk": 200,
+  // Open Library: 1 request a second, or 3 when the User-Agent carries a contact.
+  "openlibrary.org": process.env.APP_CONTACT ? 350 : 1000,
 };
 const DEFAULT_SPACING = 250;
 const MAX_RETRY_WAIT_MS = 30_000;

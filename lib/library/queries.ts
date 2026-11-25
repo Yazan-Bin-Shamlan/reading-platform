@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { backupCoverUrl } from "@/lib/sources/covers";
 import { storage } from "@/lib/storage";
 import type { ItemType } from "./schemas";
 
@@ -11,6 +12,8 @@ export type LibraryDoc = {
   language: "ar" | "en" | null;
   pageCount: number | null;
   coverUrl: string | null;
+  /** For books from Explore: an Open Library cover, tried when the source's own image fails. */
+  backupCoverUrl: string | null;
   percent: number;
   currentPage: number | null;
   createdAt: string;
@@ -27,7 +30,7 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     include: {
       progress: true,
       content: { select: { pageCount: true } },
-      catalogItem: { select: { coverUrl: true } },
+      catalogItem: { select: { coverUrl: true, pdfUrl: true } },
       _count: { select: { annotations: true } },
     },
   });
@@ -44,6 +47,7 @@ export async function listLibrary(userId: string, take?: number): Promise<Librar
     pageCount: d.content?.pageCount ?? null,
     // Books from Explore use their source's cover.
     coverUrl: d.coverKey ? (covers[d.coverKey] ?? null) : (d.catalogItem?.coverUrl ?? null),
+    backupCoverUrl: !d.coverKey && d.catalogItem ? backupCoverUrl({ ...d, ...d.catalogItem }) : null,
     percent: d.progress?.percent ?? 0,
     currentPage: d.progress ? d.progress.pageIndex + 1 : null,
     createdAt: d.createdAt.toISOString(),

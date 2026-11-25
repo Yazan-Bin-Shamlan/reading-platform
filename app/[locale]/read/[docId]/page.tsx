@@ -107,6 +107,7 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/[lo
         saved: byLang(saved),
         provider: provider?.name ?? null,
       }}
+      aiSpeech={Boolean(provider?.speak)}
     />
   );
 }
