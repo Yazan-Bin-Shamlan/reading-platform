@@ -5,14 +5,12 @@ import { getRequestConfig } from "next-intl/server";
 import { routing } from "./routing";
 
 export default getRequestConfig(async ({ locale }) => {
-  if (!locale) {
-    const param = await rootParams.locale();
-    if (!hasLocale(routing.locales, param)) notFound();
-    locale = param;
-  }
+  // A request like /favicon.png arrives with "favicon.png" as its locale: not found, not a crash.
+  const requested = locale ?? (await rootParams.locale());
+  if (!hasLocale(routing.locales, requested)) notFound();
 
   return {
-    locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    locale: requested,
+    messages: (await import(`../messages/${requested}.json`)).default,
   };
 });
