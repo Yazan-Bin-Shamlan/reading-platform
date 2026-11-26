@@ -42,7 +42,7 @@ npm install
 2. Copy `.env.example` to `.env.local`.
 3. Fill in the Supabase values:
    - **Project Settings → API Keys**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`.
-   - **Connect → ORMs → Prisma**: `DATABASE_URL` (pooled, port 6543) and `DIRECT_URL` (direct, port 5432).
+   - **Connect → ORMs → Prisma**: `DATABASE_URL` (pooled, port 6543) and `DIRECT_URL` (**Session pooler**, port 5432 on `pooler.supabase.com`; the direct connection is IPv6-only and Vercel can't reach it).
 4. Open **Authentication → URL Configuration**:
    - **Site URL**: `http://localhost:3000` for now. Change it to your production URL later.
    - **Redirect URLs**: add `http://localhost:3000/api/auth/callback`, and later `https://YOUR-DOMAIN/api/auth/callback`.
@@ -109,7 +109,7 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 | Variable | Needed from | Where to get it (free) |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | required | Supabase → Project Settings → API Keys. Leave them out in development for local mode |
-| `DATABASE_URL`, `DIRECT_URL` | required | Supabase → Connect → ORMs → Prisma (pooled and direct). In local mode, both point at the local database |
+| `DATABASE_URL`, `DIRECT_URL` | required | Supabase → Connect → ORMs → Prisma (transaction pooler and session pooler). In local mode, both point at the local database |
 | `NEXT_PUBLIC_AUTH_GOOGLE` | optional | `true` after enabling Google in Supabase |
 | `NEXT_PUBLIC_MAX_UPLOAD_MB` | optional | Upload size limit, default `50`. That's Supabase Free's per-file cap; raise it on Pro. |
 | `AI_PROVIDER` | optional | `gemini` (the default). Without a key in local development, a labelled demo provider stands in. |
@@ -124,10 +124,10 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 ## Deploying to Vercel
 
 1. Push the repo to GitHub and import it in Vercel.
-2. Add the same environment variables in **Vercel → Settings → Environment Variables**.
+2. Add the same environment variables in **Vercel → Settings → Environment Variables**. For `DIRECT_URL`, use Supabase's **Session pooler** string (port 5432 on `pooler.supabase.com`): the direct connection is IPv6-only, which Vercel's build machines can't reach.
 3. Add your production callback URL to Supabase (see step 2.4 above).
 
-`postinstall` runs `prisma generate` and `scripts/setup-pdfjs.mjs` (see [Design notes](#design-notes)) on every deploy. Run `npm run db:migrate` locally against production whenever the schema changes.
+`postinstall` runs `prisma generate` and `scripts/setup-pdfjs.mjs` (see [Design notes](#design-notes)). Vercel then runs `vercel-build`, which applies any new migrations (`prisma migrate deploy`) before `next build`, so the production database is always up to date with the code being deployed.
 
 ## Scripts
 
