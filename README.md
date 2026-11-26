@@ -126,6 +126,7 @@ Every variable is listed in [`.env.example`](.env.example). Only `NEXT_PUBLIC_*`
 1. Push the repo to GitHub and import it in Vercel.
 2. Add the same environment variables in **Vercel → Settings → Environment Variables**. For `DIRECT_URL`, use Supabase's **Session pooler** string (port 5432 on `pooler.supabase.com`): the direct connection is IPv6-only, which Vercel's build machines can't reach.
 3. Add your production callback URL to Supabase (see step 2.4 above).
+4. Keep the functions next to the database: `vercel.json` sets `"regions": ["hnd1"]` (Tokyo) because the Supabase project is in `ap-northeast-1`. If yours is elsewhere, use the matching region from <https://vercel.com/docs/regions>. Every page makes several database queries, so a function on another continent adds a noticeable delay to each one.
 
 `postinstall` runs `prisma generate` and `scripts/setup-pdfjs.mjs` (see [Design notes](#design-notes)). Vercel then runs `vercel-build`, which applies any new migrations (`prisma migrate deploy`) before `next build`, so the production database is always up to date with the code being deployed.
 
