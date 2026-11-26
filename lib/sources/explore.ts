@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { cached, getJson } from "./http";
+import { cachedStale, getJson } from "./http";
 import { searchSource, toRecord } from "./index";
 import { fromOpenAlex, openAlexUrl, type OpenAlexWork } from "./openalex";
 import type { CatalogRecord, SearchQuery, SourceId } from "./types";
@@ -50,15 +50,22 @@ export async function explore(q: ExploreQuery) {
 export type Shelf = { id: string; items: CatalogRecord[] };
 
 const SHELF_TTL = 24 * 3600;
+/** The Explore home waits this long for a shelf that isn't cached yet; it fills in for the next visitor. */
+const SHELF_WAIT_MS = 4000;
 
-/** Curated rows for the Explore home. Each is cached for a day; an empty or failing one is skipped. */
+/**
+ * Curated rows for the Explore home. Each is cached for a day and refreshed in
+ * the background once expired; an empty, failing or slow one is skipped.
+ */
 export async function shelves(): Promise<Shelf[]> {
+  const stale = (key: string, load: () => Promise<CatalogRecord[]>) =>
+    cachedStale(key, SHELF_TTL, load, { fallback: [], waitMs: SHELF_WAIT_MS });
   const live = (id: string, q: ExploreQuery & { source: SourceId }) =>
-    cached(`shelf:${id}`, SHELF_TTL, async () => (await searchSource(q.source, q)).items.slice(0, 12));
+    stale(`shelf:${id}`, async () => (await searchSource(q.source, q)).items.slice(0, 12));
   const recent = async (source: SourceId) =>
     (await db.catalogItem.findMany({ where: { source }, orderBy: { syncedAt: "desc" }, take: 12 })).map(toRecord);
   const monthPapers = () =>
-    cached("shelf:papers-month", SHELF_TTL, async () => {
+    stale("shelf:papers-month", async () => {
       const body = await getJson<{ results: OpenAlexWork[] }>(
         openAlexUrl({ query: "", page: 1, language: "en", type: "paper", sinceDays: 30, sort: "cited_by_count:desc" }, process.env.OPENALEX_API_KEY),
       );
@@ -75,7 +82,7 @@ export async function shelves(): Promise<Shelf[]> {
     ["newBooks", () => recent("doab")],
     ["arxivNew", () => recent("arxiv")],
   ];
-  const settled = await Promise.allSettled(rows.map(([, load]) => withTimeout(load(), SOURCE_TIMEOUT_MS)));
+  const settled = await Promise.allSettled(rows.map(([, load]) => load()));
   return rows
     .map(([id], i) => ({ id, items: settled[i].status === "fulfilled" ? (settled[i] as PromiseFulfilledResult<CatalogRecord[]>).value : [] }))
     .filter((s) => s.items.length > 0);

@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
@@ -114,11 +115,50 @@ export const getText = async (url: string, accept = "application/xml") => (await
 
 /** A source response cached in the database for `ttlSeconds`, so repeated queries don't hit the source. */
 export async function cached<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T> {
-  const id = createHash("sha256").update(key).digest("hex");
+  const id = cacheId(key);
   const hit = await db.sourceCache.findUnique({ where: { key: id } });
   if (hit && hit.expiresAt > new Date()) return hit.body as T;
   const body = await load();
-  const data = { body: body as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + ttlSeconds * 1000) };
-  await db.sourceCache.upsert({ where: { key: id }, create: { key: id, ...data }, update: data }).catch(() => {});
+  await store(id, body, ttlSeconds);
   return body;
+}
+
+const cacheId = (key: string) => createHash("sha256").update(key).digest("hex");
+const store = (id: string, body: unknown, ttlSeconds: number) => {
+  const data = { body: body as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + ttlSeconds * 1000) };
+  return db.sourceCache.upsert({ where: { key: id }, create: { key: id, ...data }, update: data }).catch(() => {});
+};
+
+/**
+ * Like `cached`, for things a page shows but shouldn't wait for (Explore's shelves):
+ * an expired copy is served at once and refreshed after the response; a load
+ * that fails is remembered as `fallback` for `failSeconds`, so the next visits
+ * don't wait on a source that's down; and the caller waits at most `waitMs`,
+ * the load finishing in the background for the next visitor.
+ */
+export async function cachedStale<T>(
+  key: string,
+  ttlSeconds: number,
+  load: () => Promise<T>,
+  { fallback, failSeconds = 600, waitMs }: { fallback: T; failSeconds?: number; waitMs: number },
+): Promise<T> {
+  const id = cacheId(key);
+  const hit = await db.sourceCache.findUnique({ where: { key: id } });
+  const refresh = () =>
+    load().then(
+      (body) => store(id, body, ttlSeconds).then(() => body),
+      (e) => {
+        // Keep what we had (or the fallback), and don't ask again for a while.
+        void store(id, hit ? hit.body : fallback, failSeconds);
+        throw e;
+      },
+    );
+  if (hit && hit.expiresAt > new Date()) return hit.body as T;
+  if (hit) {
+    after(() => refresh().catch(() => {}));
+    return hit.body as T;
+  }
+  const running = refresh();
+  after(() => running.catch(() => {}));
+  return Promise.race([running, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), waitMs))]).catch(() => fallback);
 }
