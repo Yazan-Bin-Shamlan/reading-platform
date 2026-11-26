@@ -26,7 +26,12 @@ const SPACING: Record<string, number> = {
   "openlibrary.org": process.env.APP_CONTACT ? 350 : 1000,
 };
 const DEFAULT_SPACING = 250;
-const MAX_RETRY_WAIT_MS = 30_000;
+/** Longest wait before a retry; a source asking for more is treated as down. */
+const MAX_RETRY_WAIT_MS = 10_000;
+/** How long a source that timed out or couldn't be reached is skipped. */
+const DOWN_AFTER_FAILURE_MS = 60_000;
+/** The most a source's own Retry-After can keep it skipped. */
+const MAX_DOWN_MS = 15 * 60_000;
 
 export class SourceError extends Error {
   constructor(
@@ -39,6 +44,15 @@ export class SourceError extends Error {
 
 const queues = new Map<string, { chain: Promise<unknown>; last: number }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Sources that are down (maintenance, timeouts), and until when. Requests to
+ * them fail at once instead of each waiting out a timeout, so pages that ask
+ * them stay fast and show what they have.
+ */
+const downUntil = new Map<string, number>();
+export const isDown = (host: string) => (downUntil.get(host) ?? 0) > Date.now();
+const markDown = (host: string, ms: number) => downUntil.set(host, Date.now() + Math.min(ms, MAX_DOWN_MS));
 
 /** Runs `fn` in the host's queue, after the host's spacing since the previous request. */
 function inQueue<T>(host: string, fn: () => Promise<T>): Promise<T> {
@@ -68,17 +82,27 @@ export async function sourceFetch(
 ): Promise<Response> {
   const host = new URL(url).host;
   for (let attempt = 0; ; attempt++) {
-    const res = await inQueue(host, () =>
-      fetch(url, {
+    const res = await inQueue(host, () => {
+      // Checked in the queue, so requests already waiting behind a failed one don't try again.
+      if (isDown(host)) throw new SourceError(503, url);
+      return fetch(url, {
         headers: { "user-agent": USER_AGENT, accept, ...headers },
         signal: AbortSignal.timeout(timeoutMs),
         redirect: "follow",
-      }),
-    );
-    if ((res.status === 429 || res.status === 503) && attempt < retries) {
-      const after = Number(res.headers.get("retry-after"));
-      await sleep(Math.min(MAX_RETRY_WAIT_MS, after > 0 ? after * 1000 : 2000 * 2 ** attempt));
-      continue;
+      }).catch((e) => {
+        markDown(host, DOWN_AFTER_FAILURE_MS);
+        throw e;
+      });
+    });
+    if (res.status === 429 || res.status === 503) {
+      const after = Number(res.headers.get("retry-after")) * 1000;
+      const wait = after > 0 ? after : 2000 * 2 ** attempt;
+      // "Back in six hours" (maintenance): don't wait, and don't ask again until then.
+      if (wait > MAX_RETRY_WAIT_MS) markDown(host, wait);
+      else if (attempt < retries) {
+        await sleep(wait);
+        continue;
+      }
     }
     if (!res.ok) throw new SourceError(res.status, url);
     return res;

@@ -11,6 +11,8 @@ import type { CatalogRecord, SearchQuery, SearchResult, SourceId } from "./types
 
 const SEARCH_TTL = 6 * 3600;
 const ITEM_TTL = 24 * 3600;
+/** An item page waits at most this long for a source that answers per item. */
+const ITEM_TIMEOUT_MS = 10_000;
 const PER_PAGE = 20;
 // Europe PMC can take half a minute on common words. Explore stops waiting
 // sooner, but the answer still lands in the cache for the next try.
@@ -133,7 +135,7 @@ export async function getRecord(source: SourceId, sourceId: string): Promise<Cat
   switch (source) {
     case "gutenberg": {
       const url = gutendexBookUrl(sourceId);
-      return fromGutendex(await cached(`gutendex:${url}`, ITEM_TTL, () => getJson<GutendexBook>(url)));
+      return fromGutendex(await cached(`gutendex:${url}`, ITEM_TTL, () => getJson<GutendexBook>(url, ITEM_TIMEOUT_MS)));
     }
     case "openalex": {
       const work = await cached(`openalex:${openAlexWorkUrl(sourceId)}`, ITEM_TTL, () =>
