@@ -204,7 +204,9 @@
     "continueWithGoogle": "Continue with Google",
     "or": "or",
     "error": "Something went wrong. Please try again.",
-    "notConfigured": "Sign-in isn’t configured yet. Add your Supabase keys to .env.local."
+    "notConfigured": "Sign-in isn’t configured yet. Add your Supabase keys to .env.local.",
+    "rateLimited": "Too many sign-in emails for now. Please wait a few minutes and try again.",
+    "agree": "By continuing, you agree to the <terms>Terms of use</terms> and the <privacy>Privacy notice</privacy>."
   },
   "common": {
     "loading": "Loading…",
@@ -515,5 +517,83 @@
     "readerLabel": "Read-aloud voice",
     "voice": "Voice",
     "more": "More voice settings"
+  },
+  "legal": {
+    "updated": "Last updated: {date}",
+    "contactTitle": "Contact",
+    "contactAt": "Questions, or to delete your account and everything in it, write to",
+    "contactFallback": "Questions, or to delete your account and everything in it: write to the support email shown on Google's sign-in screen for Qiraa.",
+    "privacy": {
+      "title": "Privacy",
+      "sections": [
+        {
+          "title": "What Qiraa keeps",
+          "body": [
+            "Your email address and, if you sign in with Google, your name — to recognise your account.",
+            "What you put in your library: PDFs you upload and books you add from Explore, your reading position, highlights, notes, bookmarks, saved words, your English level and your settings."
+          ]
+        },
+        {
+          "title": "Smart Reading Assist and the AI voice",
+          "body": [
+            "To mark and explain words, the text of the page you're reading is sent to Google's Gemini API. When you use the AI voice, the text being read aloud is sent too. You can switch Smart Assist off for any document, and the device voice never leaves your device.",
+            "Explanations and audio are stored so the same page or sentence isn't processed twice."
+          ]
+        },
+        {
+          "title": "Who handles your data",
+          "body": [
+            "Supabase (database, files and sign-in), Vercel (hosting) and Google (Gemini, and Google sign-in if you use it). Each only receives what it needs to do its part."
+          ]
+        },
+        {
+          "title": "What Qiraa doesn't do",
+          "body": [
+            "No ads, no selling or sharing your data for marketing, and no tracking cookies. The only cookies keep you signed in; your display and voice choices stay in your browser."
+          ]
+        },
+        {
+          "title": "Deleting your data",
+          "body": [
+            "You can delete any document, note or saved word in the app at any time. To delete your whole account, contact us below and everything linked to it will be removed."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of use",
+      "sections": [
+        {
+          "title": "The service",
+          "body": [
+            "Qiraa is a free reading app, provided as it is. Features may change, and it may be unavailable at times."
+          ]
+        },
+        {
+          "title": "Your files",
+          "body": [
+            "Upload only files you have the right to read. You're responsible for what you upload; your library is private to your account."
+          ]
+        },
+        {
+          "title": "Books from open libraries",
+          "body": [
+            "Explore lists public-domain and openly licensed works from their sources. Each item shows its license and source, and those terms apply to it."
+          ]
+        },
+        {
+          "title": "AI explanations",
+          "body": [
+            "Smart Reading Assist is a study aid. Its explanations and translations can be wrong; check anything important."
+          ]
+        },
+        {
+          "title": "Fair use",
+          "body": [
+            "Don't misuse the service: no attempts to break it, overload it or reach other people's data. Accounts that do may be closed."
+          ]
+        }
+      ]
+    }
   }
 }

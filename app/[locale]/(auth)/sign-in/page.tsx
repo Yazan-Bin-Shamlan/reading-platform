@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { BrandMark } from "@/components/shell/brand-mark";
+import { Link } from "@/i18n/navigation";
 import { safeNext } from "@/lib/auth";
 import { supabaseConfig } from "@/lib/supabase/config";
 
@@ -37,6 +38,20 @@ export default async function SignInPage({ params, searchParams }: PageProps<"/[
             </p>
           )}
         </div>
+        <p className="mt-8 text-center text-xs leading-relaxed text-muted-foreground">
+          {t.rich("agree", {
+            terms: (chunks) => (
+              <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
       </div>
     </main>
   );

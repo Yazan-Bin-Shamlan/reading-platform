@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-type State = "idle" | "sending" | "sent" | "error";
+type State = "idle" | "sending" | "sent" | "error" | "limit";
+
+/** Supabase's built-in mail service sends only a few sign-in emails an hour. */
+const isRateLimit = (e: { status?: number; code?: string }) => e.status === 429 || e.code === "over_email_send_rate_limit";
 
 export function SignInForm({
   next,
@@ -33,7 +36,7 @@ export function SignInForm({
       email,
       options: { emailRedirectTo: callback() },
     });
-    setState(error ? "error" : "sent");
+    setState(!error ? "sent" : isRateLimit(error) ? "limit" : "error");
   }
 
   async function withGoogle() {
@@ -83,9 +86,9 @@ export function SignInForm({
           {state === "sending" && <Loader2 className="animate-spin" aria-hidden />}
           {state === "sending" ? t("sending") : t("sendLink")}
         </Button>
-        {state === "error" && (
+        {(state === "error" || state === "limit") && (
           <p role="alert" className="text-sm text-destructive">
-            {t("error")}
+            {t(state === "limit" ? "rateLimited" : "error")}
           </p>
         )}
       </form>
